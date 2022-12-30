@@ -1,7 +1,7 @@
 # Shree KRISHNAya Namaha
-# Extended from Trainer12.py. Support to save losses applicable for train images only
+# Common trainer across datasets.
 # Author: Nagabhushan S N
-# Last Modified: 04/10/2022
+# Last Modified: 30/12/2022
 
 import datetime
 import json
@@ -24,8 +24,8 @@ from tqdm import tqdm
 
 from data_loaders.DataLoaderFactory import get_data_loader
 from data_preprocessors.DataPreprocessorFactory import get_data_preprocessor
-from data_preprocessors.DataPreprocessorParent03 import DataPreprocessorParent
-from loss_functions.LossComputer04 import LossComputer
+from data_preprocessors.DataPreprocessorParent01 import DataPreprocessorParent
+from loss_functions.LossComputer01 import LossComputer
 from lr_decayers.LearningRateDecayerFactory import get_lr_decayer
 from lr_decayers.LearningRateDecayerParent import LearningRateDecayerParent
 from models.ModelFactory import get_model

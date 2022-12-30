@@ -1,8 +1,7 @@
 # Shree KRISHNAya Namaha
-# Extended from RealEstateTrainerTester04.py. Supports outputs specific to train frames. Inference run on specified
-# scenes only. Code around scene_num and scene_id cleaned.
+# Runs both training and testing on RealEstate dataset.
 # Author: Nagabhushan S N
-# Last Modified: 09/12/2022
+# Last Modified: 30/12/2022
 
 import datetime
 import os
@@ -34,7 +33,7 @@ def save_video(path: Path, video: numpy.ndarray):
         skvideo.io.vwrite(path.as_posix(), video,
                           inputdict={'-r': str(15)},
                           outputdict={'-c:v': 'libx264', '-pix_fmt': 'yuv420p'}, verbosity=1)
-    except NameError:
+    except (NameError , OSError):
         pass
     return
 
@@ -234,8 +233,8 @@ def start_testing_static_videos(test_configs: dict):
 
 
 def demo1a():
-    train_num = 241
-    test_num = 241
+    train_num = 1
+    test_num = 1
     scene_nums = [0, 1, 3, 4, 6]
 
     for scene_num in scene_nums:
@@ -245,9 +244,9 @@ def demo1a():
             'database': 'RealEstate10K',
             'database_dirpath': 'Databases/RealEstate10K/Data',
             'data_loader': {
-                'data_loader_name': 'RealEstateDataLoader25',
-                'data_preprocessor_name': 'DataPreprocessor39',
-                'train_set_num': 12,
+                'data_loader_name': 'RealEstateDataLoader01',
+                'data_preprocessor_name': 'DataPreprocessor01',
+                'train_set_num': 2,
                 'scene_nums': [scene_num],
                 'recenter_camera_poses': True,
                 'bd_factor': 0.75,
@@ -255,24 +254,21 @@ def demo1a():
                 'ndc': True,
                 'batching': True,
                 'downsampling_factor': 1,
-                'num_rays': 1024,
+                'num_rays': 2048,
                 'precrop_fraction': 1,
                 'precrop_iterations': -1,
                 'visibility_consistency' : {
                     'load_masks': True,
                     'load_weights': False,
-                    'load_depth_thresholds': False,
-                    'masks_dirname': 'VSR006_VW06',
+                    'masks_dirname': 'VSR006_VW02',
                 },
-                # 'conv_visibility': {
-                #     'inv_depth_sampling': True,
-                #     'num_depth_planes': 64,
-                #     'patch_size': [128, 128],
-                #     'offset: [32, 32],
-                # }
+                'sparse_depth': {
+                    'dirname': 'DEL003_DE02',
+                    'num_rays': 2048,
+                },
             },
             'model': {
-                'name': 'SnbNeRF50',
+                'name': 'VipNeRF01',
                 'use_coarse_mlp': True,
                 'use_fine_mlp': True,
                 'num_samples_coarse': 64,
@@ -292,50 +288,26 @@ def demo1a():
                 'view_dependent_rgb': True,
                 'white_bkgd': False,
                 'predict_visibility': True,
-                # 'conv_visibility_predictor': {
-                #     'name': 'ConvVisibilityPredictor04'
-                # },
             },
             'losses': [
                 {
                     'name': 'MSE08',
                     'weight': 1,
-                    # 'iter_weights': {
-                    #     '0': 1, '40000': 10,
-                    # },
                 },
-                # {
-                #     'name': 'DepthVariance11',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 0, '10000': 0.1, '20000': 0.01,
-                #     # },
-                # },
                 {
                     'name': 'VisibilityLoss09',
                     'weight': 0.1,
-                    # 'iter_weights': {
-                    #     '0': 1e-2, '10000': 1e-1,  # '30000': 1e-2, '40000': 1e-1,  # '40000': 1,
-                    # },
                 },
                 {
                     'name': 'VisibilityConsistencyLoss44',
                     'iter_weights': {
-                        '0': 0, '20000': 0.001,
+                        '0': 0, '30000': 0.001,
                     },
                 },
-                # {
-                #     'name': 'ConvVisibilityLoss09',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.1,
-                #     },
-                # },
-                # {
-                #     'name': 'SpecularColorLoss01',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001
-                #     }
-                # },
+                {
+                    "name": "SparseDepthMSE07",
+                    "weight": 0.1,
+                },
             ],
             'optimizer': {
                 'lr_decayer_name': 'NeRFLearningRateDecayer01',
@@ -349,18 +321,16 @@ def demo1a():
             'validation_interval': 10000,
             'validation_chunk_size': 64 * 1024,
             'validation_save_loss_maps': False,
-            # 'num_validation_iterations': 10,
-            # 'sample_save_interval': 10000,
             'model_save_interval': 10000,
             'mixed_precision_training': False,
-            'seed': numpy.random.randint(1000),
-            # 'seed': 0,
+            # 'seed': numpy.random.randint(1000),
+            'seed': 0,
             'device': 'gpu0',
         }
         test_configs = {
             'Tester': f'{this_filename}/{Tester.this_filename}',
             'test_num': test_num,
-            'test_set_num': 12,
+            'test_set_num': 2,
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'RealEstate10K',
@@ -376,8 +346,8 @@ def demo1a():
 
 
 def demo1b():
-    train_num = 242
-    test_num = 242
+    train_num = 2
+    test_num = 2
     scene_nums = [0, 1, 3, 4, 6]
 
     for scene_num in scene_nums:
@@ -387,9 +357,9 @@ def demo1b():
             'database': 'RealEstate10K',
             'database_dirpath': 'Databases/RealEstate10K/Data',
             'data_loader': {
-                'data_loader_name': 'RealEstateDataLoader25',
-                'data_preprocessor_name': 'DataPreprocessor39',
-                'train_set_num': 13,
+                'data_loader_name': 'RealEstateDataLoader01',
+                'data_preprocessor_name': 'DataPreprocessor01',
+                'train_set_num': 3,
                 'scene_nums': [scene_num],
                 'recenter_camera_poses': True,
                 'bd_factor': 0.75,
@@ -397,24 +367,21 @@ def demo1b():
                 'ndc': True,
                 'batching': True,
                 'downsampling_factor': 1,
-                'num_rays': 1024,
+                'num_rays': 2048,
                 'precrop_fraction': 1,
                 'precrop_iterations': -1,
                 'visibility_consistency' : {
                     'load_masks': True,
                     'load_weights': False,
-                    'load_depth_thresholds': False,
-                    'masks_dirname': 'VSR006_VW07',
+                    'masks_dirname': 'VSR006_VW03',
                 },
-                # 'conv_visibility': {
-                #     'inv_depth_sampling': True,
-                #     'num_depth_planes': 64,
-                #     'patch_size': [128, 128],
-                #     'offset: [32, 32],
-                # }
+                'sparse_depth': {
+                    'dirname': 'DEL003_DE03',
+                    'num_rays': 2048,
+                },
             },
             'model': {
-                'name': 'SnbNeRF50',
+                'name': 'VipNeRF01',
                 'use_coarse_mlp': True,
                 'use_fine_mlp': True,
                 'num_samples_coarse': 64,
@@ -434,50 +401,26 @@ def demo1b():
                 'view_dependent_rgb': True,
                 'white_bkgd': False,
                 'predict_visibility': True,
-                # 'conv_visibility_predictor': {
-                #     'name': 'ConvVisibilityPredictor04'
-                # },
             },
             'losses': [
                 {
                     'name': 'MSE08',
                     'weight': 1,
-                    # 'iter_weights': {
-                    #     '0': 1, '40000': 10,
-                    # },
                 },
-                # {
-                #     'name': 'DepthVariance11',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 0, '10000': 0.1, '20000': 0.01,
-                #     # },
-                # },
                 {
                     'name': 'VisibilityLoss09',
                     'weight': 0.1,
-                    # 'iter_weights': {
-                    #     '0': 1e-2, '10000': 1e-1,  # '30000': 1e-2, '40000': 1e-1,  # '40000': 1,
-                    # },
                 },
                 {
                     'name': 'VisibilityConsistencyLoss44',
                     'iter_weights': {
-                        '0': 0, '20000': 0.001,
+                        '0': 0, '30000': 0.001,
                     },
                 },
-                # {
-                #     'name': 'ConvVisibilityLoss09',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.1,
-                #     },
-                # },
-                # {
-                #     'name': 'SpecularColorLoss01',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001
-                #     }
-                # },
+                {
+                    "name": "SparseDepthMSE07",
+                    "weight": 0.1,
+                },
             ],
             'optimizer': {
                 'lr_decayer_name': 'NeRFLearningRateDecayer01',
@@ -491,17 +434,16 @@ def demo1b():
             'validation_interval': 10000,
             'validation_chunk_size': 64 * 1024,
             'validation_save_loss_maps': False,
-            # 'num_validation_iterations': 10,
-            # 'sample_save_interval': 10000,
             'model_save_interval': 10000,
             'mixed_precision_training': False,
-            'seed': numpy.random.randint(1000),
+            # 'seed': numpy.random.randint(1000),
+            'seed': 0,
             'device': 'gpu0',
         }
         test_configs = {
             'Tester': f'{this_filename}/{Tester.this_filename}',
             'test_num': test_num,
-            'test_set_num': 12,
+            'test_set_num': 3,
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'RealEstate10K',
@@ -517,8 +459,8 @@ def demo1b():
 
 
 def demo1c():
-    train_num = 243
-    test_num = 243
+    train_num = 3
+    test_num = 3
     scene_nums = [0, 1, 3, 4, 6]
 
     for scene_num in scene_nums:
@@ -528,9 +470,9 @@ def demo1c():
             'database': 'RealEstate10K',
             'database_dirpath': 'Databases/RealEstate10K/Data',
             'data_loader': {
-                'data_loader_name': 'RealEstateDataLoader25',
-                'data_preprocessor_name': 'DataPreprocessor39',
-                'train_set_num': 14,
+                'data_loader_name': 'RealEstateDataLoader01',
+                'data_preprocessor_name': 'DataPreprocessor01',
+                'train_set_num': 4,
                 'scene_nums': [scene_num],
                 'recenter_camera_poses': True,
                 'bd_factor': 0.75,
@@ -538,24 +480,21 @@ def demo1c():
                 'ndc': True,
                 'batching': True,
                 'downsampling_factor': 1,
-                'num_rays': 1024,
+                'num_rays': 2048,
                 'precrop_fraction': 1,
                 'precrop_iterations': -1,
                 'visibility_consistency' : {
                     'load_masks': True,
                     'load_weights': False,
-                    'load_depth_thresholds': False,
-                    'masks_dirname': 'VSR006_VW08',
+                    'masks_dirname': 'VSR006_VW04',
                 },
-                # 'conv_visibility': {
-                #     'inv_depth_sampling': True,
-                #     'num_depth_planes': 64,
-                #     'patch_size': [128, 128],
-                #     'offset: [32, 32],
-                # }
+                'sparse_depth': {
+                    'dirname': 'DEL003_DE04',
+                    'num_rays': 2048,
+                },
             },
             'model': {
-                'name': 'SnbNeRF50',
+                'name': 'VipNeRF01',
                 'use_coarse_mlp': True,
                 'use_fine_mlp': True,
                 'num_samples_coarse': 64,
@@ -575,50 +514,26 @@ def demo1c():
                 'view_dependent_rgb': True,
                 'white_bkgd': False,
                 'predict_visibility': True,
-                # 'conv_visibility_predictor': {
-                #     'name': 'ConvVisibilityPredictor04'
-                # },
             },
             'losses': [
                 {
                     'name': 'MSE08',
                     'weight': 1,
-                    # 'iter_weights': {
-                    #     '0': 1, '40000': 10,
-                    # },
                 },
-                # {
-                #     'name': 'DepthVariance11',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 0, '10000': 0.1, '20000': 0.01,
-                #     # },
-                # },
                 {
                     'name': 'VisibilityLoss09',
                     'weight': 0.1,
-                    # 'iter_weights': {
-                    #     '0': 1e-2, '10000': 1e-1,  # '30000': 1e-2, '40000': 1e-1,  # '40000': 1,
-                    # },
                 },
                 {
                     'name': 'VisibilityConsistencyLoss44',
                     'iter_weights': {
-                        '0': 0, '20000': 0.001,
+                        '0': 0, '30000': 0.001,
                     },
                 },
-                # {
-                #     'name': 'ConvVisibilityLoss09',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.1,
-                #     },
-                # },
-                # {
-                #     'name': 'SpecularColorLoss01',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001
-                #     }
-                # },
+                {
+                    "name": "SparseDepthMSE07",
+                    "weight": 0.1,
+                },
             ],
             'optimizer': {
                 'lr_decayer_name': 'NeRFLearningRateDecayer01',
@@ -632,17 +547,16 @@ def demo1c():
             'validation_interval': 10000,
             'validation_chunk_size': 64 * 1024,
             'validation_save_loss_maps': False,
-            # 'num_validation_iterations': 10,
-            # 'sample_save_interval': 10000,
             'model_save_interval': 10000,
             'mixed_precision_training': False,
-            'seed': numpy.random.randint(1000),
+            # 'seed': numpy.random.randint(1000),
+            'seed': 0,
             'device': 'gpu0',
         }
         test_configs = {
             'Tester': f'{this_filename}/{Tester.this_filename}',
             'test_num': test_num,
-            'test_set_num': 13,
+            'test_set_num': 4,
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'RealEstate10K',
@@ -658,8 +572,8 @@ def demo1c():
 
 
 def demo1d():
-    train_num = 231
-    test_num = 231
+    train_num = 1+3
+    test_num = 1+3
     scene_nums = [0, 1, 3, 4, 6]
 
     for scene_num in scene_nums:
@@ -669,9 +583,9 @@ def demo1d():
             'database': 'RealEstate10K',
             'database_dirpath': 'Databases/RealEstate10K/Data',
             'data_loader': {
-                'data_loader_name': 'RealEstateDataLoader25',
-                'data_preprocessor_name': 'DataPreprocessor37',
-                'train_set_num': 12,
+                'data_loader_name': 'RealEstateDataLoader01',
+                'data_preprocessor_name': 'DataPreprocessor01',
+                'train_set_num': 2,
                 'scene_nums': [scene_num],
                 'recenter_camera_poses': True,
                 'bd_factor': 0.75,
@@ -679,28 +593,17 @@ def demo1d():
                 'ndc': True,
                 'batching': True,
                 'downsampling_factor': 1,
-                'num_rays': 2048,
+                'num_rays': 1024,
                 'precrop_fraction': 1,
                 'precrop_iterations': -1,
                 'visibility_consistency' : {
                     'load_masks': True,
                     'load_weights': False,
-                    'load_depth_thresholds': False,
-                    'masks_dirname': 'VSR006_VW06',
+                    'masks_dirname': 'VSR006_VW02',
                 },
-                'sparse_depth': {
-                    'dirname': 'DEL003_DE02',
-                    'num_rays': 2048,
-                },
-                # 'conv_visibility': {
-                #     'inv_depth_sampling': True,
-                #     'num_depth_planes': 64,
-                #     'patch_size': [128, 128],
-                #     'offset: [32, 32],
-                # }
             },
             'model': {
-                'name': 'SnbNeRF50',
+                'name': 'VipNeRF01',
                 'use_coarse_mlp': True,
                 'use_fine_mlp': True,
                 'num_samples_coarse': 64,
@@ -720,53 +623,21 @@ def demo1d():
                 'view_dependent_rgb': True,
                 'white_bkgd': False,
                 'predict_visibility': True,
-                # 'conv_visibility_predictor': {
-                #     'name': 'ConvVisibilityPredictor04'
-                # },
             },
             'losses': [
                 {
                     'name': 'MSE08',
                     'weight': 1,
-                    # 'iter_weights': {
-                    #     '0': 1, '40000': 10,
-                    # },
                 },
-                # {
-                #     'name': 'DepthVariance11',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 0, '10000': 0.1, '20000': 0.01,
-                #     # },
-                # },
                 {
                     'name': 'VisibilityLoss09',
                     'weight': 0.1,
-                    # 'iter_weights': {
-                    #     '0': 1e-2, '10000': 1e-1,  # '30000': 1e-2, '40000': 1e-1,  # '40000': 1,
-                    # },
                 },
                 {
                     'name': 'VisibilityConsistencyLoss44',
                     'iter_weights': {
-                        '0': 0, '30000': 0.001,
+                        '0': 0, '20000': 0.001,
                     },
-                },
-                # {
-                #     'name': 'ConvVisibilityLoss09',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.1,
-                #     },
-                # },
-                # {
-                #     'name': 'SpecularColorLoss01',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001
-                #     }
-                # },
-                {
-                    "name": "SparseDepthMSE07",
-                    "weight": 0.1,
                 },
             ],
             'optimizer': {
@@ -781,18 +652,15 @@ def demo1d():
             'validation_interval': 10000,
             'validation_chunk_size': 64 * 1024,
             'validation_save_loss_maps': False,
-            # 'num_validation_iterations': 10,
-            # 'sample_save_interval': 10000,
             'model_save_interval': 10000,
             'mixed_precision_training': False,
-            # 'seed': numpy.random.randint(1000),
-            'seed': 0,
+            'seed': numpy.random.randint(1000),
             'device': 'gpu0',
         }
         test_configs = {
             'Tester': f'{this_filename}/{Tester.this_filename}',
             'test_num': test_num,
-            'test_set_num': 12,
+            'test_set_num': 2,
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'RealEstate10K',
@@ -808,8 +676,8 @@ def demo1d():
 
 
 def demo1e():
-    train_num = 232
-    test_num = 232
+    train_num = 2+3
+    test_num = 2+3
     scene_nums = [0, 1, 3, 4, 6]
 
     for scene_num in scene_nums:
@@ -819,9 +687,9 @@ def demo1e():
             'database': 'RealEstate10K',
             'database_dirpath': 'Databases/RealEstate10K/Data',
             'data_loader': {
-                'data_loader_name': 'RealEstateDataLoader25',
-                'data_preprocessor_name': 'DataPreprocessor37',
-                'train_set_num': 13,
+                'data_loader_name': 'RealEstateDataLoader01',
+                'data_preprocessor_name': 'DataPreprocessor01',
+                'train_set_num': 3,
                 'scene_nums': [scene_num],
                 'recenter_camera_poses': True,
                 'bd_factor': 0.75,
@@ -829,28 +697,17 @@ def demo1e():
                 'ndc': True,
                 'batching': True,
                 'downsampling_factor': 1,
-                'num_rays': 2048,
+                'num_rays': 1024,
                 'precrop_fraction': 1,
                 'precrop_iterations': -1,
                 'visibility_consistency' : {
                     'load_masks': True,
                     'load_weights': False,
-                    'load_depth_thresholds': False,
-                    'masks_dirname': 'VSR006_VW07',
+                    'masks_dirname': 'VSR006_VW03',
                 },
-                'sparse_depth': {
-                    'dirname': 'DEL003_DE03',
-                    'num_rays': 2048,
-                },
-                # 'conv_visibility': {
-                #     'inv_depth_sampling': True,
-                #     'num_depth_planes': 64,
-                #     'patch_size': [128, 128],
-                #     'offset: [32, 32],
-                # }
             },
             'model': {
-                'name': 'SnbNeRF50',
+                'name': 'VipNeRF01',
                 'use_coarse_mlp': True,
                 'use_fine_mlp': True,
                 'num_samples_coarse': 64,
@@ -870,53 +727,21 @@ def demo1e():
                 'view_dependent_rgb': True,
                 'white_bkgd': False,
                 'predict_visibility': True,
-                # 'conv_visibility_predictor': {
-                #     'name': 'ConvVisibilityPredictor04'
-                # },
             },
             'losses': [
                 {
                     'name': 'MSE08',
                     'weight': 1,
-                    # 'iter_weights': {
-                    #     '0': 1, '40000': 10,
-                    # },
                 },
-                # {
-                #     'name': 'DepthVariance11',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 0, '10000': 0.1, '20000': 0.01,
-                #     # },
-                # },
                 {
                     'name': 'VisibilityLoss09',
                     'weight': 0.1,
-                    # 'iter_weights': {
-                    #     '0': 1e-2, '10000': 1e-1,  # '30000': 1e-2, '40000': 1e-1,  # '40000': 1,
-                    # },
                 },
                 {
                     'name': 'VisibilityConsistencyLoss44',
                     'iter_weights': {
-                        '0': 0, '30000': 0.001,
+                        '0': 0, '20000': 0.001,
                     },
-                },
-                # {
-                #     'name': 'ConvVisibilityLoss09',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.1,
-                #     },
-                # },
-                # {
-                #     'name': 'SpecularColorLoss01',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001
-                #     }
-                # },
-                {
-                    "name": "SparseDepthMSE07",
-                    "weight": 0.1,
                 },
             ],
             'optimizer': {
@@ -931,18 +756,15 @@ def demo1e():
             'validation_interval': 10000,
             'validation_chunk_size': 64 * 1024,
             'validation_save_loss_maps': False,
-            # 'num_validation_iterations': 10,
-            # 'sample_save_interval': 10000,
             'model_save_interval': 10000,
             'mixed_precision_training': False,
-            # 'seed': numpy.random.randint(1000),
-            'seed': 0,
+            'seed': numpy.random.randint(1000),
             'device': 'gpu0',
         }
         test_configs = {
             'Tester': f'{this_filename}/{Tester.this_filename}',
             'test_num': test_num,
-            'test_set_num': 13,
+            'test_set_num': 3,
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'RealEstate10K',
@@ -958,8 +780,8 @@ def demo1e():
 
 
 def demo1f():
-    train_num = 233
-    test_num = 233
+    train_num = 3+3
+    test_num = 3+3
     scene_nums = [0, 1, 3, 4, 6]
 
     for scene_num in scene_nums:
@@ -969,9 +791,9 @@ def demo1f():
             'database': 'RealEstate10K',
             'database_dirpath': 'Databases/RealEstate10K/Data',
             'data_loader': {
-                'data_loader_name': 'RealEstateDataLoader25',
-                'data_preprocessor_name': 'DataPreprocessor37',
-                'train_set_num': 14,
+                'data_loader_name': 'RealEstateDataLoader01',
+                'data_preprocessor_name': 'DataPreprocessor01',
+                'train_set_num': 4,
                 'scene_nums': [scene_num],
                 'recenter_camera_poses': True,
                 'bd_factor': 0.75,
@@ -979,28 +801,17 @@ def demo1f():
                 'ndc': True,
                 'batching': True,
                 'downsampling_factor': 1,
-                'num_rays': 2048,
+                'num_rays': 1024,
                 'precrop_fraction': 1,
                 'precrop_iterations': -1,
                 'visibility_consistency' : {
                     'load_masks': True,
                     'load_weights': False,
-                    'load_depth_thresholds': False,
-                    'masks_dirname': 'VSR006_VW08',
+                    'masks_dirname': 'VSR006_VW04',
                 },
-                'sparse_depth': {
-                    'dirname': 'DEL003_DE04',
-                    'num_rays': 2048,
-                },
-                # 'conv_visibility': {
-                #     'inv_depth_sampling': True,
-                #     'num_depth_planes': 64,
-                #     'patch_size': [128, 128],
-                #     'offset: [32, 32],
-                # }
             },
             'model': {
-                'name': 'SnbNeRF50',
+                'name': 'VipNeRF01',
                 'use_coarse_mlp': True,
                 'use_fine_mlp': True,
                 'num_samples_coarse': 64,
@@ -1020,53 +831,21 @@ def demo1f():
                 'view_dependent_rgb': True,
                 'white_bkgd': False,
                 'predict_visibility': True,
-                # 'conv_visibility_predictor': {
-                #     'name': 'ConvVisibilityPredictor04'
-                # },
             },
             'losses': [
                 {
                     'name': 'MSE08',
                     'weight': 1,
-                    # 'iter_weights': {
-                    #     '0': 1, '40000': 10,
-                    # },
                 },
-                # {
-                #     'name': 'DepthVariance11',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 0, '10000': 0.1, '20000': 0.01,
-                #     # },
-                # },
                 {
                     'name': 'VisibilityLoss09',
                     'weight': 0.1,
-                    # 'iter_weights': {
-                    #     '0': 1e-2, '10000': 1e-1,  # '30000': 1e-2, '40000': 1e-1,  # '40000': 1,
-                    # },
                 },
                 {
                     'name': 'VisibilityConsistencyLoss44',
                     'iter_weights': {
-                        '0': 0, '30000': 0.001,
+                        '0': 0, '20000': 0.001,
                     },
-                },
-                # {
-                #     'name': 'ConvVisibilityLoss09',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.1,
-                #     },
-                # },
-                # {
-                #     'name': 'SpecularColorLoss01',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001
-                #     }
-                # },
-                {
-                    "name": "SparseDepthMSE07",
-                    "weight": 0.1,
                 },
             ],
             'optimizer': {
@@ -1081,18 +860,15 @@ def demo1f():
             'validation_interval': 10000,
             'validation_chunk_size': 64 * 1024,
             'validation_save_loss_maps': False,
-            # 'num_validation_iterations': 10,
-            # 'sample_save_interval': 10000,
             'model_save_interval': 10000,
             'mixed_precision_training': False,
-            # 'seed': numpy.random.randint(1000),
-            'seed': 0,
+            'seed': numpy.random.randint(1000),
             'device': 'gpu0',
         }
         test_configs = {
             'Tester': f'{this_filename}/{Tester.this_filename}',
             'test_num': test_num,
-            'test_set_num': 14,
+            'test_set_num': 4,
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'RealEstate10K',
@@ -1108,8 +884,8 @@ def demo1f():
 
 
 def demo1g():
-    train_num = 244
-    test_num = 244
+    train_num = 4+3
+    test_num = 4+3
     scene_nums = [0, 1, 3, 4, 6]
 
     for scene_num in scene_nums:
@@ -1119,9 +895,9 @@ def demo1g():
             'database': 'RealEstate10K',
             'database_dirpath': 'Databases/RealEstate10K/Data',
             'data_loader': {
-                'data_loader_name': 'RealEstateDataLoader25',
-                'data_preprocessor_name': 'DataPreprocessor39',
-                'train_set_num': 12,
+                'data_loader_name': 'RealEstateDataLoader01',
+                'data_preprocessor_name': 'DataPreprocessor01',
+                'train_set_num': 2,
                 'scene_nums': [scene_num],
                 'recenter_camera_poses': True,
                 'bd_factor': 0.75,
@@ -1132,12 +908,6 @@ def demo1g():
                 'num_rays': 2048,
                 'precrop_fraction': 1,
                 'precrop_iterations': -1,
-                # 'visibility_consistency' : {
-                #     'load_masks': True,
-                #     'load_weights': False,
-                #     'load_depth_thresholds': False,
-                #     'masks_dirname': 'VSR006_VW06',
-                # },
                 'sparse_depth': {
                     'dirname': 'DEL003_DE02',
                     'num_rays': 2048,
@@ -1145,15 +915,9 @@ def demo1g():
                 'dense_depth': {
                     'dirname': 'VSR006_DE02',
                 },
-                # 'conv_visibility': {
-                #     'inv_depth_sampling': True,
-                #     'num_depth_planes': 64,
-                #     'patch_size': [128, 128],
-                #     'offset: [32, 32],
-                # }
             },
             'model': {
-                'name': 'SnbNeRF50',
+                'name': 'VipNeRF01',
                 'use_coarse_mlp': True,
                 'use_fine_mlp': True,
                 'num_samples_coarse': 64,
@@ -1173,50 +937,12 @@ def demo1g():
                 'view_dependent_rgb': True,
                 'white_bkgd': False,
                 'predict_visibility': False,
-                # 'conv_visibility_predictor': {
-                #     'name': 'ConvVisibilityPredictor04'
-                # },
             },
             'losses': [
                 {
                     'name': 'MSE08',
                     'weight': 1,
-                    # 'iter_weights': {
-                    #     '0': 1, '40000': 10,
-                    # },
                 },
-                # {
-                #     'name': 'DepthVariance11',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 0, '10000': 0.1, '20000': 0.01,
-                #     # },
-                # },
-                # {
-                #     'name': 'VisibilityLoss09',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 1e-2, '10000': 1e-1,  # '30000': 1e-2, '40000': 1e-1,  # '40000': 1,
-                #     # },
-                # },
-                # {
-                #     'name': 'VisibilityConsistencyLoss44',
-                #     'iter_weights': {
-                #         '0': 0, '30000': 0.001,
-                #     },
-                # },
-                # {
-                #     'name': 'ConvVisibilityLoss09',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.1,
-                #     },
-                # },
-                # {
-                #     'name': 'SpecularColorLoss01',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001
-                #     }
-                # },
                 {
                     "name": "SparseDepthMSE07",
                     "weight": 0.1,
@@ -1238,18 +964,15 @@ def demo1g():
             'validation_interval': 10000,
             'validation_chunk_size': 64 * 1024,
             'validation_save_loss_maps': False,
-            # 'num_validation_iterations': 10,
-            # 'sample_save_interval': 10000,
             'model_save_interval': 10000,
             'mixed_precision_training': False,
             'seed': numpy.random.randint(1000),
-            # 'seed': 0,
             'device': 'gpu0',
         }
         test_configs = {
             'Tester': f'{this_filename}/{Tester.this_filename}',
             'test_num': test_num,
-            'test_set_num': 12,
+            'test_set_num': 2,
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'RealEstate10K',
@@ -1265,8 +988,8 @@ def demo1g():
 
 
 def demo1h():
-    train_num = 245
-    test_num = 245
+    train_num = 5+3
+    test_num = 5+3
     scene_nums = [0, 1, 3, 4, 6]
 
     for scene_num in scene_nums:
@@ -1276,9 +999,9 @@ def demo1h():
             'database': 'RealEstate10K',
             'database_dirpath': 'Databases/RealEstate10K/Data',
             'data_loader': {
-                'data_loader_name': 'RealEstateDataLoader25',
-                'data_preprocessor_name': 'DataPreprocessor39',
-                'train_set_num': 11,
+                'data_loader_name': 'RealEstateDataLoader01',
+                'data_preprocessor_name': 'DataPreprocessor01',
+                'train_set_num': 1,
                 'scene_nums': [scene_num],
                 'recenter_camera_poses': True,
                 'bd_factor': 0.75,
@@ -1289,20 +1012,9 @@ def demo1h():
                 'num_rays': 1024,
                 'precrop_fraction': 1,
                 'precrop_iterations': -1,
-                # 'visibility_consistency' : {
-                #     'load_masks': False,
-                #     'load_weights': False,
-                #     'load_depth_thresholds': False,
-                # },
-                # 'conv_visibility': {
-                #     'inv_depth_sampling': True,
-                #     'num_depth_planes': 64,
-                #     'patch_size': [128, 128],
-                #     'offset: [32, 32],
-                # }
             },
             'model': {
-                'name': 'SnbNeRF50',
+                'name': 'VipNeRF01',
                 'use_coarse_mlp': True,
                 'use_fine_mlp': True,
                 'num_samples_coarse': 64,
@@ -1322,50 +1034,16 @@ def demo1h():
                 'view_dependent_rgb': True,
                 'white_bkgd': False,
                 'predict_visibility': True,
-                # 'conv_visibility_predictor': {
-                #     'name': 'ConvVisibilityPredictor04'
-                # },
             },
             'losses': [
                 {
                     'name': 'MSE08',
                     'weight': 1,
-                    # 'iter_weights': {
-                    #     '0': 1, '40000': 10,
-                    # },
                 },
-                # {
-                #     'name': 'DepthVariance11',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 0, '10000': 0.1, '20000': 0.01,
-                #     # },
-                # },
                 {
                     'name': 'VisibilityLoss09',
                     'weight': 0.1,
-                    # 'iter_weights': {
-                    #     '0': 1e-2, '10000': 1e-1,  # '30000': 1e-2, '40000': 1e-1,  # '40000': 1,
-                    # },
                 },
-                # {
-                #     'name': 'VisibilityConsistencyLoss44',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001,
-                #     },
-                # },
-                # {
-                #     'name': 'ConvVisibilityLoss09',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.1,
-                #     },
-                # },
-                # {
-                #     'name': 'SpecularColorLoss01',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001
-                #     }
-                # },
             ],
             'optimizer': {
                 'lr_decayer_name': 'NeRFLearningRateDecayer01',
@@ -1376,313 +1054,20 @@ def demo1h():
             },
             'resume_training': True,
             'num_iterations': 300000,
-            'validation_interval': 1000000,
+            'validation_interval': 10000,
             'validation_chunk_size': 64 * 1024,
             'validation_save_loss_maps': False,
-            # 'num_validation_iterations': 10,
-            # 'sample_save_interval': 10000,
             'model_save_interval': 50000,
             'mixed_precision_training': False,
             'seed': numpy.random.randint(1000),
-            # 'seed': 0,
             'device': 'gpu0',
         }
         test_configs = {
             'Tester': f'{this_filename}/{Tester.this_filename}',
             'test_num': test_num,
-            'test_set_num': 11,
+            'test_set_num': 1,
             'train_num': train_num,
             'model_name': 'Model_Iter300000.tar',
-            'database_name': 'RealEstate10K',
-            'database_dirpath': 'RealEstate10K/Data',
-            'scene_nums': [scene_num],
-            'device': 'gpu0',
-        }
-        start_training(train_configs)
-        start_testing(test_configs)
-        start_testing_videos(test_configs)
-        start_testing_static_videos(test_configs)
-    return
-
-
-def demo1i():
-    train_num = 246
-    test_num = 246
-    scene_nums = [0, 1, 3, 4, 6]
-
-    for scene_num in scene_nums:
-        train_configs = {
-            'trainer': f'{this_filename}/{Trainer.this_filename}',
-            'train_num': train_num,
-            'database': 'RealEstate10K',
-            'database_dirpath': 'Databases/RealEstate10K/Data',
-            'data_loader': {
-                'data_loader_name': 'RealEstateDataLoader25',
-                'data_preprocessor_name': 'DataPreprocessor39',
-                'train_set_num': 12,
-                'scene_nums': [scene_num],
-                'recenter_camera_poses': True,
-                'bd_factor': 0.75,
-                'spherify': False,
-                'ndc': True,
-                'batching': True,
-                'downsampling_factor': 1,
-                'num_rays': 1024,
-                'precrop_fraction': 1,
-                'precrop_iterations': -1,
-                'visibility_consistency' : {
-                    'load_masks': False,
-                    'load_weights': False,
-                    'load_depth_thresholds': False,
-                },
-                # 'conv_visibility': {
-                #     'inv_depth_sampling': True,
-                #     'num_depth_planes': 64,
-                #     'patch_size': [128, 128],
-                #     'offset: [32, 32],
-                # }
-            },
-            'model': {
-                'name': 'SnbNeRF50',
-                'use_coarse_mlp': True,
-                'use_fine_mlp': True,
-                'num_samples_coarse': 64,
-                'num_samples_fine': 128,
-                'chunk': 4*1024,
-                'lindisp': False,
-                'points_positional_encoding_degree': 10,
-                'views_positional_encoding_degree': 4,
-                'netchunk': 16*1024,
-                'netdepth_coarse': 8,
-                'netdepth_fine': 8,
-                'netwidth_coarse': 256,
-                'netwidth_fine': 256,
-                'perturb': True,
-                'raw_noise_std': 1.0,
-                'use_view_dirs': True,
-                'view_dependent_rgb': True,
-                'white_bkgd': False,
-                'predict_visibility': True,
-                # 'conv_visibility_predictor': {
-                #     'name': 'ConvVisibilityPredictor04'
-                # },
-            },
-            'losses': [
-                {
-                    'name': 'MSE08',
-                    'weight': 1,
-                    # 'iter_weights': {
-                    #     '0': 1, '40000': 10,
-                    # },
-                },
-                # {
-                #     'name': 'DepthVariance11',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 0, '10000': 0.1, '20000': 0.01,
-                #     # },
-                # },
-                {
-                    'name': 'VisibilityLoss09',
-                    'weight': 0.1,
-                    # 'iter_weights': {
-                    #     '0': 1e-2, '10000': 1e-1,  # '30000': 1e-2, '40000': 1e-1,  # '40000': 1,
-                    # },
-                },
-                # {
-                #     'name': 'VisibilityConsistencyLoss44',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001,
-                #     },
-                # },
-                # {
-                #     'name': 'ConvVisibilityLoss09',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.1,
-                #     },
-                # },
-                # {
-                #     'name': 'SpecularColorLoss01',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001
-                #     }
-                # },
-            ],
-            'optimizer': {
-                'lr_decayer_name': 'NeRFLearningRateDecayer01',
-                'lr_initial': 5e-4,
-                'lr_decay': 250,
-                'beta1': 0.9,
-                'beta2': 0.999,
-            },
-            'resume_training': True,
-            'num_iterations': 50000,
-            'validation_interval': 10000,
-            'validation_chunk_size': 64 * 1024,
-            'validation_save_loss_maps': False,
-            # 'num_validation_iterations': 10,
-            # 'sample_save_interval': 10000,
-            'model_save_interval': 10000,
-            'mixed_precision_training': False,
-            'seed': numpy.random.randint(1000),
-            # 'seed': 0,
-            'device': 'gpu0',
-        }
-        test_configs = {
-            'Tester': f'{this_filename}/{Tester.this_filename}',
-            'test_num': test_num,
-            'test_set_num': 12,
-            'train_num': train_num,
-            'model_name': 'Model_Iter050000.tar',
-            'database_name': 'RealEstate10K',
-            'database_dirpath': 'RealEstate10K/Data',
-            'scene_nums': [scene_num],
-            'device': 'gpu0',
-        }
-        start_training(train_configs)
-        start_testing(test_configs)
-        start_testing_videos(test_configs)
-        start_testing_static_videos(test_configs)
-    return
-
-
-def demo1j():
-    train_num = 247
-    test_num = 247
-    scene_nums = [0, 1, 3, 4, 6]
-
-    for scene_num in scene_nums:
-        train_configs = {
-            'trainer': f'{this_filename}/{Trainer.this_filename}',
-            'train_num': train_num,
-            'database': 'RealEstate10K',
-            'database_dirpath': 'Databases/RealEstate10K/Data',
-            'data_loader': {
-                'data_loader_name': 'RealEstateDataLoader25',
-                'data_preprocessor_name': 'DataPreprocessor39',
-                'train_set_num': 12,
-                'scene_nums': [scene_num],
-                'recenter_camera_poses': True,
-                'bd_factor': 0.75,
-                'spherify': False,
-                'ndc': False,
-                'batching': True,
-                'downsampling_factor': 1,
-                'num_rays': 1024,
-                'precrop_fraction': 1,
-                'precrop_iterations': -1,
-                'visibility_consistency' : {
-                    'load_masks': False,
-                    'load_weights': False,
-                    'load_depth_thresholds': False,
-                },
-                'sparse_depth': {
-                    'dirname': 'DEL003_DE02',
-                    'num_rays': 1024,
-                },
-                # 'conv_visibility': {
-                #     'inv_depth_sampling': True,
-                #     'num_depth_planes': 64,
-                #     'patch_size': [128, 128],
-                #     'offset: [32, 32],
-                # }
-            },
-            'model': {
-                'name': 'SnbNeRF50',
-                'use_coarse_mlp': True,
-                'use_fine_mlp': True,
-                'num_samples_coarse': 64,
-                'num_samples_fine': 128,
-                'chunk': 4*1024,
-                'lindisp': False,
-                'points_positional_encoding_degree': 10,
-                'views_positional_encoding_degree': 4,
-                'netchunk': 16*1024,
-                'netdepth_coarse': 8,
-                'netdepth_fine': 8,
-                'netwidth_coarse': 256,
-                'netwidth_fine': 256,
-                'perturb': True,
-                'raw_noise_std': 1.0,
-                'use_view_dirs': True,
-                'view_dependent_rgb': True,
-                'white_bkgd': False,
-                'predict_visibility': True,
-                # 'conv_visibility_predictor': {
-                #     'name': 'ConvVisibilityPredictor04'
-                # },
-            },
-            'losses': [
-                {
-                    'name': 'MSE08',
-                    'weight': 1,
-                    # 'iter_weights': {
-                    #     '0': 1, '40000': 10,
-                    # },
-                },
-                # {
-                #     'name': 'DepthVariance11',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 0, '10000': 0.1, '20000': 0.01,
-                #     # },
-                # },
-                {
-                    'name': 'VisibilityLoss09',
-                    'weight': 0.1,
-                    # 'iter_weights': {
-                    #     '0': 1e-2, '10000': 1e-1,  # '30000': 1e-2, '40000': 1e-1,  # '40000': 1,
-                    # },
-                },
-                # {
-                #     'name': 'VisibilityConsistencyLoss44',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001,
-                #     },
-                # },
-                # {
-                #     'name': 'ConvVisibilityLoss09',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.1,
-                #     },
-                # },
-                # {
-                #     'name': 'SpecularColorLoss01',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001
-                #     }
-                # },
-                {
-                    "name": "SparseDepthMSE08",
-                    "weight": 0.1,
-                },
-            ],
-            'optimizer': {
-                'lr_decayer_name': 'NeRFLearningRateDecayer01',
-                'lr_initial': 5e-4,
-                'lr_decay': 250,
-                'beta1': 0.9,
-                'beta2': 0.999,
-            },
-            'resume_training': True,
-            'num_iterations': 50000,
-            'validation_interval': 10000,
-            'validation_chunk_size': 64 * 1024,
-            'validation_save_loss_maps': False,
-            # 'num_validation_iterations': 10,
-            # 'sample_save_interval': 10000,
-            'model_save_interval': 10000,
-            'mixed_precision_training': False,
-            'seed': numpy.random.randint(1000),
-            # 'seed': 0,
-            'device': 'gpu0',
-        }
-        test_configs = {
-            'Tester': f'{this_filename}/{Tester.this_filename}',
-            'test_num': test_num,
-            'test_set_num': 12,
-            'train_num': train_num,
-            'model_name': 'Model_Iter050000.tar',
             'database_name': 'RealEstate10K',
             'database_dirpath': 'RealEstate10K/Data',
             'scene_nums': [scene_num],
@@ -1698,7 +1083,7 @@ def demo1j():
 def demo2():
     configs = {
         'trainer': f'{this_filename}/{Trainer.this_filename}',
-        'train_num': 231,
+        'train_num': 2,
         'resume_training': True,
     }
     start_training(configs)
@@ -1710,7 +1095,7 @@ def demo3():
     Saves plots mid training
     :return:
     """
-    train_num = 158
+    train_num = 1
     scene_num = 0
     loss_plots_dirpath = Path(f'../Runs/Training/Train{train_num:04}/{scene_num:05}/Logs')
     Trainer.save_plots(loss_plots_dirpath)
@@ -1719,12 +1104,12 @@ def demo3():
 
 
 def demo4():
-    for train_num in [231,]:
+    for train_num in [2, ]:
         test_num = train_num
         test_configs = {
             'Tester': f'{this_filename}/{Tester.this_filename}',
             'test_num': test_num,
-            'test_set_num': 4,
+            'test_set_num': 2,
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'RealEstate10K',
@@ -1746,12 +1131,6 @@ def main():
     demo1f()
     demo1g()
     demo1h()
-    demo1i()
-    demo1j()
-    # demo1k()
-    # demo1l()
-    # demo2()
-    # demo4()
     return
 
 
@@ -1768,9 +1147,3 @@ if __name__ == '__main__':
     end_time = time.time()
     print('Program ended at ' + datetime.datetime.now().strftime('%d/%m/%Y %I:%M:%S %p'))
     print('Execution time: ' + str(datetime.timedelta(seconds=end_time - start_time)))
-
-    from snb_utils import Mailer
-
-    subject = f'VSR006/{this_filename}'
-    mail_content = f'Program ended.\n' + run_result
-    Mailer.send_mail(subject, mail_content)

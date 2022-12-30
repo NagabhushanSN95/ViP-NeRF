@@ -1,8 +1,7 @@
 # Shree KRISHNAya Namaha
-# Extended from NerfLlffTrainerTester04.py. Supports outputs specific to train frames. Inference run on specified scenes
-# only. Code around scene_name and scene_id cleaned.
+# Runs both training and testing on NeRF-LLFF dataset.
 # Author: Nagabhushan S N
-# Last Modified: 09/12/2022
+# Last Modified: 30/12/2022
 
 import datetime
 import os
@@ -194,7 +193,7 @@ def start_testing_static_videos(test_configs: dict):
     scene_names = test_configs.get('scene_names', video_data['scene_name'].to_numpy())
     scene_names = numpy.unique(scene_names)
 
-    videos_data = [2, 3, ]
+    videos_data = [1, 2, 3, ]
     for video_num in videos_data:
         video_frame_nums_path = database_dirpath / f'TrainTestSets/Set{set_num:02}/VideoPoses{video_num:02}/VideoFrameNums.csv'
         if video_frame_nums_path.exists():
@@ -235,10 +234,9 @@ def start_testing_static_videos(test_configs: dict):
 
 
 def demo1a():
-    train_num = 1261
-    test_num = 1261
+    train_num = 11
+    test_num = 11
     scene_names = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
-    # scene_names = ['horns']
 
     for scene_name in scene_names:
         train_configs = {
@@ -247,449 +245,10 @@ def demo1a():
             'database': 'NeRF_LLFF',
             'database_dirpath': 'Databases/NeRF_LLFF/Data',
             'data_loader': {
-                'data_loader_name': 'NerfLlffDataLoader19',
-                'data_preprocessor_name': 'DataPreprocessor39',
-                'train_set_num': 4,
+                'data_loader_name': 'NerfLlffDataLoader01',
+                'data_preprocessor_name': 'DataPreprocessor01',
+                'train_set_num': 2,
                 'scene_names': [scene_name],
-                # 'scene_names': ['room', ],
-                'resolution_suffix': '_down4',
-                'recenter_camera_poses': True,
-                'bd_factor': 0.75,
-                'spherify': False,
-                'ndc': True,
-                'batching': True,
-                'downsampling_factor': 1,
-                'num_rays': 1024,
-                'precrop_fraction': 1,
-                'precrop_iterations': -1,
-                'visibility_consistency' : {
-                    'load_masks': True,
-                    'load_weights': False,
-                    'load_depth_thresholds': False,
-                    'masks_dirname': 'VSR006_VW09',
-                },
-                # 'conv_visibility': {
-                #     'inv_depth_sampling': True,
-                #     'num_depth_planes': 64,
-                #     'patch_size': [128, 128],
-                #     'offset: [32, 32],
-                # }
-            },
-            'model': {
-                'name': 'SnbNeRF50',
-                'use_coarse_mlp': True,
-                'use_fine_mlp': True,
-                'num_samples_coarse': 64,
-                'num_samples_fine': 128,
-                'chunk': 4*1024,
-                'lindisp': False,
-                'points_positional_encoding_degree': 10,
-                'views_positional_encoding_degree': 4,
-                'netchunk': 16*1024,
-                'netdepth_coarse': 8,
-                'netdepth_fine': 8,
-                'netwidth_coarse': 256,
-                'netwidth_fine': 256,
-                'perturb': True,
-                'raw_noise_std': 1.0,
-                'use_view_dirs': True,
-                'view_dependent_rgb': True,
-                'white_bkgd': False,
-                'predict_visibility': True,
-                # 'conv_visibility_predictor': {
-                #     'name': 'ConvVisibilityPredictor04'
-                # },
-            },
-            'losses': [
-                {
-                    'name': 'MSE08',
-                    'weight': 1,
-                    # 'iter_weights': {
-                    #     '0': 1, '40000': 10,
-                    # },
-                },
-                # {
-                #     'name': 'DepthVariance11',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 0, '10000': 0.1, '20000': 0.01,
-                #     # },
-                # },
-                {
-                    'name': 'VisibilityLoss09',
-                    'weight': 0.1,
-                    # 'iter_weights': {
-                    #     '0': 1e-2, '10000': 1e-1,  # '30000': 1e-2, '40000': 1e-1,  # '40000': 1,
-                    # },
-                },
-                {
-                    'name': 'VisibilityConsistencyLoss44',
-                    'iter_weights': {
-                        '0': 0, '20000': 0.001,
-                    },
-                },
-                # {
-                #     'name': 'ConvVisibilityLoss09',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.1,
-                #     },
-                # },
-                # {
-                #     'name': 'SpecularColorLoss01',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001
-                #     }
-                # },
-            ],
-            'optimizer': {
-                'lr_decayer_name': 'NeRFLearningRateDecayer01',
-                'lr_initial': 5e-4,
-                'lr_decay': 250,
-                'beta1': 0.9,
-                'beta2': 0.999,
-            },
-            'resume_training': True,
-            'num_iterations': 50000,
-            'validation_interval': 100000,
-            'validation_chunk_size': 64 * 1024,
-            'validation_save_loss_maps': False,
-            # 'num_validation_iterations': 10,
-            # 'sample_save_interval': 10000,
-            'model_save_interval': 10000,
-            'mixed_precision_training': False,
-            'seed': numpy.random.randint(1000),
-            # 'seed': 0,
-            'device': 'gpu0',
-        }
-        test_configs = {
-            'Tester': f'{this_filename}/{Tester.this_filename}',
-            'test_num': test_num,
-            'test_set_num': 4,
-            'train_num': train_num,
-            'model_name': 'Model_Iter050000.tar',
-            'database_name': 'NeRF_LLFF',
-            'database_dirpath': 'NeRF_LLFF/Data',
-            'resolution_suffix': train_configs['data_loader']['resolution_suffix'],
-            'scene_names': [scene_name],
-            'device': 'gpu0',
-        }
-        start_training(train_configs)
-        start_testing(test_configs)
-        start_testing_videos(test_configs)
-        # start_testing_static_videos(test_configs)
-    return
-
-
-def demo1b():
-    train_num = 1262
-    test_num = 1262
-    scene_names = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
-    # scene_names = ['horns']
-
-    for scene_name in scene_names:
-        train_configs = {
-            'trainer': f'{this_filename}/{Trainer.this_filename}',
-            'train_num': train_num,
-            'database': 'NeRF_LLFF',
-            'database_dirpath': 'Databases/NeRF_LLFF/Data',
-            'data_loader': {
-                'data_loader_name': 'NerfLlffDataLoader19',
-                'data_preprocessor_name': 'DataPreprocessor39',
-                'train_set_num': 5,
-                'scene_names': [scene_name],
-                # 'scene_names': ['room', ],
-                'resolution_suffix': '_down4',
-                'recenter_camera_poses': True,
-                'bd_factor': 0.75,
-                'spherify': False,
-                'ndc': True,
-                'batching': True,
-                'downsampling_factor': 1,
-                'num_rays': 1024,
-                'precrop_fraction': 1,
-                'precrop_iterations': -1,
-                'visibility_consistency' : {
-                    'load_masks': True,
-                    'load_weights': False,
-                    'load_depth_thresholds': False,
-                    'masks_dirname': 'VSR006_VW10',
-                },
-                # 'conv_visibility': {
-                #     'inv_depth_sampling': True,
-                #     'num_depth_planes': 64,
-                #     'patch_size': [128, 128],
-                #     'offset: [32, 32],
-                # }
-            },
-            'model': {
-                'name': 'SnbNeRF50',
-                'use_coarse_mlp': True,
-                'use_fine_mlp': True,
-                'num_samples_coarse': 64,
-                'num_samples_fine': 128,
-                'chunk': 4*1024,
-                'lindisp': False,
-                'points_positional_encoding_degree': 10,
-                'views_positional_encoding_degree': 4,
-                'netchunk': 16*1024,
-                'netdepth_coarse': 8,
-                'netdepth_fine': 8,
-                'netwidth_coarse': 256,
-                'netwidth_fine': 256,
-                'perturb': True,
-                'raw_noise_std': 1.0,
-                'use_view_dirs': True,
-                'view_dependent_rgb': True,
-                'white_bkgd': False,
-                'predict_visibility': True,
-                # 'conv_visibility_predictor': {
-                #     'name': 'ConvVisibilityPredictor04'
-                # },
-            },
-            'losses': [
-                {
-                    'name': 'MSE08',
-                    'weight': 1,
-                    # 'iter_weights': {
-                    #     '0': 1, '40000': 10,
-                    # },
-                },
-                # {
-                #     'name': 'DepthVariance11',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 0, '10000': 0.1, '20000': 0.01,
-                #     # },
-                # },
-                {
-                    'name': 'VisibilityLoss09',
-                    'weight': 0.1,
-                    # 'iter_weights': {
-                    #     '0': 1e-2, '10000': 1e-1,  # '30000': 1e-2, '40000': 1e-1,  # '40000': 1,
-                    # },
-                },
-                {
-                    'name': 'VisibilityConsistencyLoss44',
-                    'iter_weights': {
-                        '0': 0, '20000': 0.001,
-                    },
-                },
-                # {
-                #     'name': 'ConvVisibilityLoss09',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.1,
-                #     },
-                # },
-                # {
-                #     'name': 'SpecularColorLoss01',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001
-                #     }
-                # },
-            ],
-            'optimizer': {
-                'lr_decayer_name': 'NeRFLearningRateDecayer01',
-                'lr_initial': 5e-4,
-                'lr_decay': 250,
-                'beta1': 0.9,
-                'beta2': 0.999,
-            },
-            'resume_training': True,
-            'num_iterations': 50000,
-            'validation_interval': 100000,
-            'validation_chunk_size': 64 * 1024,
-            'validation_save_loss_maps': False,
-            # 'num_validation_iterations': 10,
-            # 'sample_save_interval': 10000,
-            'model_save_interval': 10000,
-            'mixed_precision_training': False,
-            'seed': numpy.random.randint(1000),
-            # 'seed': 0,
-            'device': 'gpu0',
-        }
-        test_configs = {
-            'Tester': f'{this_filename}/{Tester.this_filename}',
-            'test_num': test_num,
-            'test_set_num': 5,
-            'train_num': train_num,
-            'model_name': 'Model_Iter050000.tar',
-            'database_name': 'NeRF_LLFF',
-            'database_dirpath': 'NeRF_LLFF/Data',
-            'resolution_suffix': train_configs['data_loader']['resolution_suffix'],
-            'scene_names': [scene_name],
-            'device': 'gpu0',
-        }
-        start_training(train_configs)
-        start_testing(test_configs)
-        start_testing_videos(test_configs)
-        # start_testing_static_videos(test_configs)
-    return
-
-
-def demo1c():
-    train_num = 1263
-    test_num = 1263
-    scene_names = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
-    # scene_names = ['horns']
-
-    for scene_name in scene_names:
-        train_configs = {
-            'trainer': f'{this_filename}/{Trainer.this_filename}',
-            'train_num': train_num,
-            'database': 'NeRF_LLFF',
-            'database_dirpath': 'Databases/NeRF_LLFF/Data',
-            'data_loader': {
-                'data_loader_name': 'NerfLlffDataLoader19',
-                'data_preprocessor_name': 'DataPreprocessor39',
-                'train_set_num': 6,
-                'scene_names': [scene_name],
-                # 'scene_names': ['room', ],
-                'resolution_suffix': '_down4',
-                'recenter_camera_poses': True,
-                'bd_factor': 0.75,
-                'spherify': False,
-                'ndc': True,
-                'batching': True,
-                'downsampling_factor': 1,
-                'num_rays': 1024,
-                'precrop_fraction': 1,
-                'precrop_iterations': -1,
-                'visibility_consistency' : {
-                    'load_masks': True,
-                    'load_weights': False,
-                    'load_depth_thresholds': False,
-                    'masks_dirname': 'VSR006_VW11',
-                },
-                # 'conv_visibility': {
-                #     'inv_depth_sampling': True,
-                #     'num_depth_planes': 64,
-                #     'patch_size': [128, 128],
-                #     'offset: [32, 32],
-                # }
-            },
-            'model': {
-                'name': 'SnbNeRF50',
-                'use_coarse_mlp': True,
-                'use_fine_mlp': True,
-                'num_samples_coarse': 64,
-                'num_samples_fine': 128,
-                'chunk': 4*1024,
-                'lindisp': False,
-                'points_positional_encoding_degree': 10,
-                'views_positional_encoding_degree': 4,
-                'netchunk': 16*1024,
-                'netdepth_coarse': 8,
-                'netdepth_fine': 8,
-                'netwidth_coarse': 256,
-                'netwidth_fine': 256,
-                'perturb': True,
-                'raw_noise_std': 1.0,
-                'use_view_dirs': True,
-                'view_dependent_rgb': True,
-                'white_bkgd': False,
-                'predict_visibility': True,
-                # 'conv_visibility_predictor': {
-                #     'name': 'ConvVisibilityPredictor04'
-                # },
-            },
-            'losses': [
-                {
-                    'name': 'MSE08',
-                    'weight': 1,
-                    # 'iter_weights': {
-                    #     '0': 1, '40000': 10,
-                    # },
-                },
-                # {
-                #     'name': 'DepthVariance11',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 0, '10000': 0.1, '20000': 0.01,
-                #     # },
-                # },
-                {
-                    'name': 'VisibilityLoss09',
-                    'weight': 0.1,
-                    # 'iter_weights': {
-                    #     '0': 1e-2, '10000': 1e-1,  # '30000': 1e-2, '40000': 1e-1,  # '40000': 1,
-                    # },
-                },
-                {
-                    'name': 'VisibilityConsistencyLoss44',
-                    'iter_weights': {
-                        '0': 0, '20000': 0.001,
-                    },
-                },
-                # {
-                #     'name': 'ConvVisibilityLoss09',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.1,
-                #     },
-                # },
-                # {
-                #     'name': 'SpecularColorLoss01',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001
-                #     }
-                # },
-            ],
-            'optimizer': {
-                'lr_decayer_name': 'NeRFLearningRateDecayer01',
-                'lr_initial': 5e-4,
-                'lr_decay': 250,
-                'beta1': 0.9,
-                'beta2': 0.999,
-            },
-            'resume_training': True,
-            'num_iterations': 50000,
-            'validation_interval': 100000,
-            'validation_chunk_size': 64 * 1024,
-            'validation_save_loss_maps': False,
-            # 'num_validation_iterations': 10,
-            # 'sample_save_interval': 10000,
-            'model_save_interval': 10000,
-            'mixed_precision_training': False,
-            'seed': numpy.random.randint(1000),
-            # 'seed': 0,
-            'device': 'gpu0',
-        }
-        test_configs = {
-            'Tester': f'{this_filename}/{Tester.this_filename}',
-            'test_num': test_num,
-            'test_set_num': 6,
-            'train_num': train_num,
-            'model_name': 'Model_Iter050000.tar',
-            'database_name': 'NeRF_LLFF',
-            'database_dirpath': 'NeRF_LLFF/Data',
-            'resolution_suffix': train_configs['data_loader']['resolution_suffix'],
-            'scene_names': [scene_name],
-            'device': 'gpu0',
-        }
-        start_training(train_configs)
-        start_testing(test_configs)
-        start_testing_videos(test_configs)
-        # start_testing_static_videos(test_configs)
-    return
-
-
-def demo1d():
-    train_num = 1251
-    test_num = 1251
-    scene_names = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
-    # scene_names = ['horns']
-
-    for scene_name in scene_names:
-        train_configs = {
-            'trainer': f'{this_filename}/{Trainer.this_filename}',
-            'train_num': train_num,
-            'database': 'NeRF_LLFF',
-            'database_dirpath': 'Databases/NeRF_LLFF/Data',
-            'data_loader': {
-                'data_loader_name': 'NerfLlffDataLoader19',
-                'data_preprocessor_name': 'DataPreprocessor37',
-                'train_set_num': 4,
-                'scene_names': [scene_name],
-                # 'scene_names': ['room', ],
                 'resolution_suffix': '_down4',
                 'recenter_camera_poses': True,
                 'bd_factor': 0.75,
@@ -703,22 +262,15 @@ def demo1d():
                 'visibility_consistency' : {
                     'load_masks': True,
                     'load_weights': False,
-                    'load_depth_thresholds': False,
-                    'masks_dirname': 'VSR006_VW09',
+                    'masks_dirname': 'VSR006_VW02',
                 },
                 'sparse_depth': {
                     'dirname': 'DEL003_DE02',
                     'num_rays': 2048,
                 },
-                # 'conv_visibility': {
-                #     'inv_depth_sampling': True,
-                #     'num_depth_planes': 64,
-                #     'patch_size': [128, 128],
-                #     'offset: [32, 32],
-                # }
             },
             'model': {
-                'name': 'SnbNeRF50',
+                'name': 'VipNeRF01',
                 'use_coarse_mlp': True,
                 'use_fine_mlp': True,
                 'num_samples_coarse': 64,
@@ -738,31 +290,15 @@ def demo1d():
                 'view_dependent_rgb': True,
                 'white_bkgd': False,
                 'predict_visibility': True,
-                # 'conv_visibility_predictor': {
-                #     'name': 'ConvVisibilityPredictor04'
-                # },
             },
             'losses': [
                 {
                     'name': 'MSE08',
                     'weight': 1,
-                    # 'iter_weights': {
-                    #     '0': 1, '40000': 10,
-                    # },
                 },
-                # {
-                #     'name': 'DepthVariance11',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 0, '10000': 0.1, '20000': 0.01,
-                #     # },
-                # },
                 {
                     'name': 'VisibilityLoss09',
                     'weight': 0.1,
-                    # 'iter_weights': {
-                    #     '0': 1e-2, '10000': 1e-1,  # '30000': 1e-2, '40000': 1e-1,  # '40000': 1,
-                    # },
                 },
                 {
                     'name': 'VisibilityConsistencyLoss44',
@@ -770,18 +306,6 @@ def demo1d():
                         '0': 0, '30000': 0.001,
                     },
                 },
-                # {
-                #     'name': 'ConvVisibilityLoss09',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.1,
-                #     },
-                # },
-                # {
-                #     'name': 'SpecularColorLoss01',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001
-                #     }
-                # },
                 {
                     "name": "SparseDepthMSE07",
                     "weight": 0.1,
@@ -799,18 +323,15 @@ def demo1d():
             'validation_interval': 10000,
             'validation_chunk_size': 64 * 1024,
             'validation_save_loss_maps': False,
-            # 'num_validation_iterations': 10,
-            # 'sample_save_interval': 10000,
             'model_save_interval': 10000,
             'mixed_precision_training': False,
             'seed': numpy.random.randint(1000),
-            # 'seed': 0,
             'device': 'gpu0',
         }
         test_configs = {
             'Tester': f'{this_filename}/{Tester.this_filename}',
             'test_num': test_num,
-            'test_set_num': 4,
+            'test_set_num': 2,
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'NeRF_LLFF',
@@ -822,15 +343,14 @@ def demo1d():
         start_training(train_configs)
         start_testing(test_configs)
         start_testing_videos(test_configs)
-        # start_testing_static_videos(test_configs)
+        start_testing_static_videos(test_configs)
     return
 
 
-def demo1e():
-    train_num = 1252
-    test_num = 1252
+def demo1b():
+    train_num = 12
+    test_num = 12
     scene_names = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
-    # scene_names = ['horns']
 
     for scene_name in scene_names:
         train_configs = {
@@ -839,11 +359,10 @@ def demo1e():
             'database': 'NeRF_LLFF',
             'database_dirpath': 'Databases/NeRF_LLFF/Data',
             'data_loader': {
-                'data_loader_name': 'NerfLlffDataLoader19',
-                'data_preprocessor_name': 'DataPreprocessor37',
-                'train_set_num': 5,
+                'data_loader_name': 'NerfLlffDataLoader01',
+                'data_preprocessor_name': 'DataPreprocessor01',
+                'train_set_num': 3,
                 'scene_names': [scene_name],
-                # 'scene_names': ['room', ],
                 'resolution_suffix': '_down4',
                 'recenter_camera_poses': True,
                 'bd_factor': 0.75,
@@ -857,22 +376,15 @@ def demo1e():
                 'visibility_consistency' : {
                     'load_masks': True,
                     'load_weights': False,
-                    'load_depth_thresholds': False,
-                    'masks_dirname': 'VSR006_VW10',
+                    'masks_dirname': 'VSR006_VW03',
                 },
                 'sparse_depth': {
                     'dirname': 'DEL003_DE03',
                     'num_rays': 2048,
                 },
-                # 'conv_visibility': {
-                #     'inv_depth_sampling': True,
-                #     'num_depth_planes': 64,
-                #     'patch_size': [128, 128],
-                #     'offset: [32, 32],
-                # }
             },
             'model': {
-                'name': 'SnbNeRF50',
+                'name': 'VipNeRF01',
                 'use_coarse_mlp': True,
                 'use_fine_mlp': True,
                 'num_samples_coarse': 64,
@@ -892,31 +404,15 @@ def demo1e():
                 'view_dependent_rgb': True,
                 'white_bkgd': False,
                 'predict_visibility': True,
-                # 'conv_visibility_predictor': {
-                #     'name': 'ConvVisibilityPredictor04'
-                # },
             },
             'losses': [
                 {
                     'name': 'MSE08',
                     'weight': 1,
-                    # 'iter_weights': {
-                    #     '0': 1, '40000': 10,
-                    # },
                 },
-                # {
-                #     'name': 'DepthVariance11',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 0, '10000': 0.1, '20000': 0.01,
-                #     # },
-                # },
                 {
                     'name': 'VisibilityLoss09',
                     'weight': 0.1,
-                    # 'iter_weights': {
-                    #     '0': 1e-2, '10000': 1e-1,  # '30000': 1e-2, '40000': 1e-1,  # '40000': 1,
-                    # },
                 },
                 {
                     'name': 'VisibilityConsistencyLoss44',
@@ -924,18 +420,6 @@ def demo1e():
                         '0': 0, '30000': 0.001,
                     },
                 },
-                # {
-                #     'name': 'ConvVisibilityLoss09',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.1,
-                #     },
-                # },
-                # {
-                #     'name': 'SpecularColorLoss01',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001
-                #     }
-                # },
                 {
                     "name": "SparseDepthMSE07",
                     "weight": 0.1,
@@ -953,18 +437,15 @@ def demo1e():
             'validation_interval': 10000,
             'validation_chunk_size': 64 * 1024,
             'validation_save_loss_maps': False,
-            # 'num_validation_iterations': 10,
-            # 'sample_save_interval': 10000,
             'model_save_interval': 10000,
             'mixed_precision_training': False,
             'seed': numpy.random.randint(1000),
-            # 'seed': 0,
             'device': 'gpu0',
         }
         test_configs = {
             'Tester': f'{this_filename}/{Tester.this_filename}',
             'test_num': test_num,
-            'test_set_num': 5,
+            'test_set_num': 3,
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'NeRF_LLFF',
@@ -976,15 +457,14 @@ def demo1e():
         start_training(train_configs)
         start_testing(test_configs)
         start_testing_videos(test_configs)
-        # start_testing_static_videos(test_configs)
+        start_testing_static_videos(test_configs)
     return
 
 
-def demo1f():
-    train_num = 1253
-    test_num = 1253
+def demo1c():
+    train_num = 13
+    test_num = 13
     scene_names = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
-    # scene_names = ['horns']
 
     for scene_name in scene_names:
         train_configs = {
@@ -993,11 +473,10 @@ def demo1f():
             'database': 'NeRF_LLFF',
             'database_dirpath': 'Databases/NeRF_LLFF/Data',
             'data_loader': {
-                'data_loader_name': 'NerfLlffDataLoader19',
-                'data_preprocessor_name': 'DataPreprocessor37',
-                'train_set_num': 6,
+                'data_loader_name': 'NerfLlffDataLoader01',
+                'data_preprocessor_name': 'DataPreprocessor01',
+                'train_set_num': 4,
                 'scene_names': [scene_name],
-                # 'scene_names': ['room', ],
                 'resolution_suffix': '_down4',
                 'recenter_camera_poses': True,
                 'bd_factor': 0.75,
@@ -1011,22 +490,15 @@ def demo1f():
                 'visibility_consistency' : {
                     'load_masks': True,
                     'load_weights': False,
-                    'load_depth_thresholds': False,
-                    'masks_dirname': 'VSR006_VW11',
+                    'masks_dirname': 'VSR006_VW04',
                 },
                 'sparse_depth': {
                     'dirname': 'DEL003_DE04',
                     'num_rays': 2048,
                 },
-                # 'conv_visibility': {
-                #     'inv_depth_sampling': True,
-                #     'num_depth_planes': 64,
-                #     'patch_size': [128, 128],
-                #     'offset: [32, 32],
-                # }
             },
             'model': {
-                'name': 'SnbNeRF50',
+                'name': 'VipNeRF01',
                 'use_coarse_mlp': True,
                 'use_fine_mlp': True,
                 'num_samples_coarse': 64,
@@ -1046,31 +518,15 @@ def demo1f():
                 'view_dependent_rgb': True,
                 'white_bkgd': False,
                 'predict_visibility': True,
-                # 'conv_visibility_predictor': {
-                #     'name': 'ConvVisibilityPredictor04'
-                # },
             },
             'losses': [
                 {
                     'name': 'MSE08',
                     'weight': 1,
-                    # 'iter_weights': {
-                    #     '0': 1, '40000': 10,
-                    # },
                 },
-                # {
-                #     'name': 'DepthVariance11',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 0, '10000': 0.1, '20000': 0.01,
-                #     # },
-                # },
                 {
                     'name': 'VisibilityLoss09',
                     'weight': 0.1,
-                    # 'iter_weights': {
-                    #     '0': 1e-2, '10000': 1e-1,  # '30000': 1e-2, '40000': 1e-1,  # '40000': 1,
-                    # },
                 },
                 {
                     'name': 'VisibilityConsistencyLoss44',
@@ -1078,18 +534,6 @@ def demo1f():
                         '0': 0, '30000': 0.001,
                     },
                 },
-                # {
-                #     'name': 'ConvVisibilityLoss09',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.1,
-                #     },
-                # },
-                # {
-                #     'name': 'SpecularColorLoss01',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001
-                #     }
-                # },
                 {
                     "name": "SparseDepthMSE07",
                     "weight": 0.1,
@@ -1107,18 +551,15 @@ def demo1f():
             'validation_interval': 10000,
             'validation_chunk_size': 64 * 1024,
             'validation_save_loss_maps': False,
-            # 'num_validation_iterations': 10,
-            # 'sample_save_interval': 10000,
             'model_save_interval': 10000,
             'mixed_precision_training': False,
             'seed': numpy.random.randint(1000),
-            # 'seed': 0,
             'device': 'gpu0',
         }
         test_configs = {
             'Tester': f'{this_filename}/{Tester.this_filename}',
             'test_num': test_num,
-            'test_set_num': 6,
+            'test_set_num': 4,
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'NeRF_LLFF',
@@ -1130,15 +571,14 @@ def demo1f():
         start_training(train_configs)
         start_testing(test_configs)
         start_testing_videos(test_configs)
-        # start_testing_static_videos(test_configs)
+        start_testing_static_videos(test_configs)
     return
 
 
-def demo1g():
-    train_num = 1264
-    test_num = 1264
+def demo1d():
+    train_num = 11+3
+    test_num = 11+3
     scene_names = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
-    # scene_names = ['horns']
 
     for scene_name in scene_names:
         train_configs = {
@@ -1147,11 +587,328 @@ def demo1g():
             'database': 'NeRF_LLFF',
             'database_dirpath': 'Databases/NeRF_LLFF/Data',
             'data_loader': {
-                'data_loader_name': 'NerfLlffDataLoader19',
-                'data_preprocessor_name': 'DataPreprocessor39',
+                'data_loader_name': 'NerfLlffDataLoader01',
+                'data_preprocessor_name': 'DataPreprocessor01',
+                'train_set_num': 2,
+                'scene_names': [scene_name],
+                'resolution_suffix': '_down4',
+                'recenter_camera_poses': True,
+                'bd_factor': 0.75,
+                'spherify': False,
+                'ndc': True,
+                'batching': True,
+                'downsampling_factor': 1,
+                'num_rays': 1024,
+                'precrop_fraction': 1,
+                'precrop_iterations': -1,
+                'visibility_consistency' : {
+                    'load_masks': True,
+                    'load_weights': False,
+                    'masks_dirname': 'VSR006_VW02',
+                },
+            },
+            'model': {
+                'name': 'VipNeRF01',
+                'use_coarse_mlp': True,
+                'use_fine_mlp': True,
+                'num_samples_coarse': 64,
+                'num_samples_fine': 128,
+                'chunk': 4*1024,
+                'lindisp': False,
+                'points_positional_encoding_degree': 10,
+                'views_positional_encoding_degree': 4,
+                'netchunk': 16*1024,
+                'netdepth_coarse': 8,
+                'netdepth_fine': 8,
+                'netwidth_coarse': 256,
+                'netwidth_fine': 256,
+                'perturb': True,
+                'raw_noise_std': 1.0,
+                'use_view_dirs': True,
+                'view_dependent_rgb': True,
+                'white_bkgd': False,
+                'predict_visibility': True,
+            },
+            'losses': [
+                {
+                    'name': 'MSE08',
+                    'weight': 1,
+                },
+                {
+                    'name': 'VisibilityLoss09',
+                    'weight': 0.1,
+                },
+                {
+                    'name': 'VisibilityConsistencyLoss44',
+                    'iter_weights': {
+                        '0': 0, '20000': 0.001,
+                    },
+                },
+            ],
+            'optimizer': {
+                'lr_decayer_name': 'NeRFLearningRateDecayer01',
+                'lr_initial': 5e-4,
+                'lr_decay': 250,
+                'beta1': 0.9,
+                'beta2': 0.999,
+            },
+            'resume_training': True,
+            'num_iterations': 50000,
+            'validation_interval': 10000,
+            'validation_chunk_size': 64 * 1024,
+            'validation_save_loss_maps': False,
+            'model_save_interval': 10000,
+            'mixed_precision_training': False,
+            'seed': numpy.random.randint(1000),
+            'device': 'gpu0',
+        }
+        test_configs = {
+            'Tester': f'{this_filename}/{Tester.this_filename}',
+            'test_num': test_num,
+            'test_set_num': 2,
+            'train_num': train_num,
+            'model_name': 'Model_Iter050000.tar',
+            'database_name': 'NeRF_LLFF',
+            'database_dirpath': 'NeRF_LLFF/Data',
+            'resolution_suffix': train_configs['data_loader']['resolution_suffix'],
+            'scene_names': [scene_name],
+            'device': 'gpu0',
+        }
+        start_training(train_configs)
+        start_testing(test_configs)
+        start_testing_videos(test_configs)
+        start_testing_static_videos(test_configs)
+    return
+
+
+def demo1e():
+    train_num = 12+3
+    test_num = 12+3
+    scene_names = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
+
+    for scene_name in scene_names:
+        train_configs = {
+            'trainer': f'{this_filename}/{Trainer.this_filename}',
+            'train_num': train_num,
+            'database': 'NeRF_LLFF',
+            'database_dirpath': 'Databases/NeRF_LLFF/Data',
+            'data_loader': {
+                'data_loader_name': 'NerfLlffDataLoader01',
+                'data_preprocessor_name': 'DataPreprocessor01',
+                'train_set_num': 3,
+                'scene_names': [scene_name],
+                'resolution_suffix': '_down4',
+                'recenter_camera_poses': True,
+                'bd_factor': 0.75,
+                'spherify': False,
+                'ndc': True,
+                'batching': True,
+                'downsampling_factor': 1,
+                'num_rays': 1024,
+                'precrop_fraction': 1,
+                'precrop_iterations': -1,
+                'visibility_consistency' : {
+                    'load_masks': True,
+                    'load_weights': False,
+                    'masks_dirname': 'VSR006_VW03',
+                },
+            },
+            'model': {
+                'name': 'VipNeRF01',
+                'use_coarse_mlp': True,
+                'use_fine_mlp': True,
+                'num_samples_coarse': 64,
+                'num_samples_fine': 128,
+                'chunk': 4*1024,
+                'lindisp': False,
+                'points_positional_encoding_degree': 10,
+                'views_positional_encoding_degree': 4,
+                'netchunk': 16*1024,
+                'netdepth_coarse': 8,
+                'netdepth_fine': 8,
+                'netwidth_coarse': 256,
+                'netwidth_fine': 256,
+                'perturb': True,
+                'raw_noise_std': 1.0,
+                'use_view_dirs': True,
+                'view_dependent_rgb': True,
+                'white_bkgd': False,
+                'predict_visibility': True,
+            },
+            'losses': [
+                {
+                    'name': 'MSE08',
+                    'weight': 1,
+                },
+                {
+                    'name': 'VisibilityLoss09',
+                    'weight': 0.1,
+                },
+                {
+                    'name': 'VisibilityConsistencyLoss44',
+                    'iter_weights': {
+                        '0': 0, '20000': 0.001,
+                    },
+                },
+            ],
+            'optimizer': {
+                'lr_decayer_name': 'NeRFLearningRateDecayer01',
+                'lr_initial': 5e-4,
+                'lr_decay': 250,
+                'beta1': 0.9,
+                'beta2': 0.999,
+            },
+            'resume_training': True,
+            'num_iterations': 50000,
+            'validation_interval': 10000,
+            'validation_chunk_size': 64 * 1024,
+            'validation_save_loss_maps': False,
+            'model_save_interval': 10000,
+            'mixed_precision_training': False,
+            'seed': numpy.random.randint(1000),
+            'device': 'gpu0',
+        }
+        test_configs = {
+            'Tester': f'{this_filename}/{Tester.this_filename}',
+            'test_num': test_num,
+            'test_set_num': 3,
+            'train_num': train_num,
+            'model_name': 'Model_Iter050000.tar',
+            'database_name': 'NeRF_LLFF',
+            'database_dirpath': 'NeRF_LLFF/Data',
+            'resolution_suffix': train_configs['data_loader']['resolution_suffix'],
+            'scene_names': [scene_name],
+            'device': 'gpu0',
+        }
+        start_training(train_configs)
+        start_testing(test_configs)
+        start_testing_videos(test_configs)
+        start_testing_static_videos(test_configs)
+    return
+
+
+def demo1f():
+    train_num = 13+3
+    test_num = 13+3
+    scene_names = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
+
+    for scene_name in scene_names:
+        train_configs = {
+            'trainer': f'{this_filename}/{Trainer.this_filename}',
+            'train_num': train_num,
+            'database': 'NeRF_LLFF',
+            'database_dirpath': 'Databases/NeRF_LLFF/Data',
+            'data_loader': {
+                'data_loader_name': 'NerfLlffDataLoader01',
+                'data_preprocessor_name': 'DataPreprocessor01',
                 'train_set_num': 4,
                 'scene_names': [scene_name],
-                # 'scene_names': ['room', ],
+                'resolution_suffix': '_down4',
+                'recenter_camera_poses': True,
+                'bd_factor': 0.75,
+                'spherify': False,
+                'ndc': True,
+                'batching': True,
+                'downsampling_factor': 1,
+                'num_rays': 1024,
+                'precrop_fraction': 1,
+                'precrop_iterations': -1,
+                'visibility_consistency' : {
+                    'load_masks': True,
+                    'load_weights': False,
+                    'masks_dirname': 'VSR006_VW04',
+                },
+            },
+            'model': {
+                'name': 'VipNeRF01',
+                'use_coarse_mlp': True,
+                'use_fine_mlp': True,
+                'num_samples_coarse': 64,
+                'num_samples_fine': 128,
+                'chunk': 4*1024,
+                'lindisp': False,
+                'points_positional_encoding_degree': 10,
+                'views_positional_encoding_degree': 4,
+                'netchunk': 16*1024,
+                'netdepth_coarse': 8,
+                'netdepth_fine': 8,
+                'netwidth_coarse': 256,
+                'netwidth_fine': 256,
+                'perturb': True,
+                'raw_noise_std': 1.0,
+                'use_view_dirs': True,
+                'view_dependent_rgb': True,
+                'white_bkgd': False,
+                'predict_visibility': True,
+            },
+            'losses': [
+                {
+                    'name': 'MSE08',
+                    'weight': 1,
+                },
+                {
+                    'name': 'VisibilityLoss09',
+                    'weight': 0.1,
+                },
+                {
+                    'name': 'VisibilityConsistencyLoss44',
+                    'iter_weights': {
+                        '0': 0, '20000': 0.001,
+                    },
+                },
+            ],
+            'optimizer': {
+                'lr_decayer_name': 'NeRFLearningRateDecayer01',
+                'lr_initial': 5e-4,
+                'lr_decay': 250,
+                'beta1': 0.9,
+                'beta2': 0.999,
+            },
+            'resume_training': True,
+            'num_iterations': 50000,
+            'validation_interval': 10000,
+            'validation_chunk_size': 64 * 1024,
+            'validation_save_loss_maps': False,
+            'model_save_interval': 10000,
+            'mixed_precision_training': False,
+            'seed': numpy.random.randint(1000),
+            'device': 'gpu0',
+        }
+        test_configs = {
+            'Tester': f'{this_filename}/{Tester.this_filename}',
+            'test_num': test_num,
+            'test_set_num': 4,
+            'train_num': train_num,
+            'model_name': 'Model_Iter050000.tar',
+            'database_name': 'NeRF_LLFF',
+            'database_dirpath': 'NeRF_LLFF/Data',
+            'resolution_suffix': train_configs['data_loader']['resolution_suffix'],
+            'scene_names': [scene_name],
+            'device': 'gpu0',
+        }
+        start_training(train_configs)
+        start_testing(test_configs)
+        start_testing_videos(test_configs)
+        start_testing_static_videos(test_configs)
+    return
+
+
+def demo1g():
+    train_num = 14+3
+    test_num = 14+3
+    scene_names = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
+
+    for scene_name in scene_names:
+        train_configs = {
+            'trainer': f'{this_filename}/{Trainer.this_filename}',
+            'train_num': train_num,
+            'database': 'NeRF_LLFF',
+            'database_dirpath': 'Databases/NeRF_LLFF/Data',
+            'data_loader': {
+                'data_loader_name': 'NerfLlffDataLoader01',
+                'data_preprocessor_name': 'DataPreprocessor01',
+                'train_set_num': 2,
+                'scene_names': [scene_name],
                 'resolution_suffix': '_down4',
                 'recenter_camera_poses': True,
                 'bd_factor': 0.75,
@@ -1162,28 +919,16 @@ def demo1g():
                 'num_rays': 2048,
                 'precrop_fraction': 1,
                 'precrop_iterations': -1,
-                # 'visibility_consistency' : {
-                #     'load_masks': True,
-                #     'load_weights': False,
-                #     'load_depth_thresholds': False,
-                #     'masks_dirname': 'VSR006_VW09',
-                # },
                 'sparse_depth': {
                     'dirname': 'DEL003_DE02',
                     'num_rays': 2048,
                 },
                 'dense_depth': {
-                    'dirname': 'VSR006_DE04',
+                    'dirname': 'VSR006_DE02',
                 },
-                # 'conv_visibility': {
-                #     'inv_depth_sampling': True,
-                #     'num_depth_planes': 64,
-                #     'patch_size': [128, 128],
-                #     'offset: [32, 32],
-                # }
             },
             'model': {
-                'name': 'SnbNeRF50',
+                'name': 'VipNeRF01',
                 'use_coarse_mlp': True,
                 'use_fine_mlp': True,
                 'num_samples_coarse': 64,
@@ -1203,50 +948,12 @@ def demo1g():
                 'view_dependent_rgb': True,
                 'white_bkgd': False,
                 'predict_visibility': False,
-                # 'conv_visibility_predictor': {
-                #     'name': 'ConvVisibilityPredictor04'
-                # },
             },
             'losses': [
                 {
                     'name': 'MSE08',
                     'weight': 1,
-                    # 'iter_weights': {
-                    #     '0': 1, '40000': 10,
-                    # },
                 },
-                # {
-                #     'name': 'DepthVariance11',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 0, '10000': 0.1, '20000': 0.01,
-                #     # },
-                # },
-                # {
-                #     'name': 'VisibilityLoss09',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 1e-2, '10000': 1e-1,  # '30000': 1e-2, '40000': 1e-1,  # '40000': 1,
-                #     # },
-                # },
-                # {
-                #     'name': 'VisibilityConsistencyLoss44',
-                #     'iter_weights': {
-                #         '0': 0, '30000': 0.001,
-                #     },
-                # },
-                # {
-                #     'name': 'ConvVisibilityLoss09',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.1,
-                #     },
-                # },
-                # {
-                #     'name': 'SpecularColorLoss01',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001
-                #     }
-                # },
                 {
                     "name": "SparseDepthMSE07",
                     "weight": 0.1,
@@ -1265,21 +972,18 @@ def demo1g():
             },
             'resume_training': True,
             'num_iterations': 50000,
-            'validation_interval': 100000,
+            'validation_interval': 10000,
             'validation_chunk_size': 64 * 1024,
             'validation_save_loss_maps': False,
-            # 'num_validation_iterations': 10,
-            # 'sample_save_interval': 10000,
             'model_save_interval': 10000,
             'mixed_precision_training': False,
             'seed': numpy.random.randint(1000),
-            # 'seed': 0,
             'device': 'gpu0',
         }
         test_configs = {
             'Tester': f'{this_filename}/{Tester.this_filename}',
             'test_num': test_num,
-            'test_set_num': 4,
+            'test_set_num': 2,
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'NeRF_LLFF',
@@ -1290,16 +994,15 @@ def demo1g():
         }
         start_training(train_configs)
         start_testing(test_configs)
-        # start_testing_videos(test_configs)
-        # start_testing_static_videos(test_configs)
+        start_testing_videos(test_configs)
+        start_testing_static_videos(test_configs)
     return
 
 
 def demo1h():
-    train_num = 1265
-    test_num = 1265
+    train_num = 15+3
+    test_num = 15+3
     scene_names = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
-    # scene_names = ['horns']
 
     for scene_name in scene_names:
         train_configs = {
@@ -1308,11 +1011,10 @@ def demo1h():
             'database': 'NeRF_LLFF',
             'database_dirpath': 'Databases/NeRF_LLFF/Data',
             'data_loader': {
-                'data_loader_name': 'NerfLlffDataLoader19',
-                'data_preprocessor_name': 'DataPreprocessor39',
-                'train_set_num': 3,
+                'data_loader_name': 'NerfLlffDataLoader01',
+                'data_preprocessor_name': 'DataPreprocessor01',
+                'train_set_num': 1,
                 'scene_names': [scene_name],
-                # 'scene_names': ['room', ],
                 'resolution_suffix': '_down4',
                 'recenter_camera_poses': True,
                 'bd_factor': 0.75,
@@ -1323,20 +1025,9 @@ def demo1h():
                 'num_rays': 1024,
                 'precrop_fraction': 1,
                 'precrop_iterations': -1,
-                # 'visibility_consistency' : {
-                #     'load_masks': False,
-                #     'load_weights': False,
-                #     'load_depth_thresholds': False,
-                # },
-                # 'conv_visibility': {
-                #     'inv_depth_sampling': True,
-                #     'num_depth_planes': 64,
-                #     'patch_size': [128, 128],
-                #     'offset: [32, 32],
-                # }
             },
             'model': {
-                'name': 'SnbNeRF50',
+                'name': 'VipNeRF01',
                 'use_coarse_mlp': True,
                 'use_fine_mlp': True,
                 'num_samples_coarse': 64,
@@ -1356,50 +1047,16 @@ def demo1h():
                 'view_dependent_rgb': True,
                 'white_bkgd': False,
                 'predict_visibility': True,
-                # 'conv_visibility_predictor': {
-                #     'name': 'ConvVisibilityPredictor04'
-                # },
             },
             'losses': [
                 {
                     'name': 'MSE08',
                     'weight': 1,
-                    # 'iter_weights': {
-                    #     '0': 1, '40000': 10,
-                    # },
                 },
-                # {
-                #     'name': 'DepthVariance11',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 0, '10000': 0.1, '20000': 0.01,
-                #     # },
-                # },
                 {
                     'name': 'VisibilityLoss09',
                     'weight': 0.1,
-                    # 'iter_weights': {
-                    #     '0': 1e-2, '10000': 1e-1,  # '30000': 1e-2, '40000': 1e-1,  # '40000': 1,
-                    # },
                 },
-                # {
-                #     'name': 'VisibilityConsistencyLoss44',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001,
-                #     },
-                # },
-                # {
-                #     'name': 'ConvVisibilityLoss09',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.1,
-                #     },
-                # },
-                # {
-                #     'name': 'SpecularColorLoss01',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001
-                #     }
-                # },
             ],
             'optimizer': {
                 'lr_decayer_name': 'NeRFLearningRateDecayer01',
@@ -1410,21 +1067,18 @@ def demo1h():
             },
             'resume_training': True,
             'num_iterations': 300000,
-            'validation_interval': 1000000,
+            'validation_interval': 10000,
             'validation_chunk_size': 64 * 1024,
             'validation_save_loss_maps': False,
-            # 'num_validation_iterations': 10,
-            # 'sample_save_interval': 10000,
             'model_save_interval': 50000,
             'mixed_precision_training': False,
             'seed': numpy.random.randint(1000),
-            # 'seed': 0,
             'device': 'gpu0',
         }
         test_configs = {
             'Tester': f'{this_filename}/{Tester.this_filename}',
             'test_num': test_num,
-            'test_set_num': 3,
+            'test_set_num': 1,
             'train_num': train_num,
             'model_name': 'Model_Iter300000.tar',
             'database_name': 'NeRF_LLFF',
@@ -1435,313 +1089,15 @@ def demo1h():
         }
         start_training(train_configs)
         start_testing(test_configs)
-        # start_testing_videos(test_configs)
-        # start_testing_static_videos(test_configs)
-    return
-
-
-def demo1i():
-    train_num = 1266
-    test_num = 1266
-    scene_names = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
-    # scene_names = ['horns']
-
-    for scene_name in scene_names:
-        train_configs = {
-            'trainer': f'{this_filename}/{Trainer.this_filename}',
-            'train_num': train_num,
-            'database': 'NeRF_LLFF',
-            'database_dirpath': 'Databases/NeRF_LLFF/Data',
-            'data_loader': {
-                'data_loader_name': 'NerfLlffDataLoader19',
-                'data_preprocessor_name': 'DataPreprocessor39',
-                'train_set_num': 4,
-                'scene_names': [scene_name],
-                # 'scene_names': ['room', ],
-                'resolution_suffix': '_down4',
-                'recenter_camera_poses': True,
-                'bd_factor': 0.75,
-                'spherify': False,
-                'ndc': True,
-                'batching': True,
-                'downsampling_factor': 1,
-                'num_rays': 1024,
-                'precrop_fraction': 1,
-                'precrop_iterations': -1,
-                'visibility_consistency' : {
-                    'load_masks': False,
-                    'load_weights': False,
-                    'load_depth_thresholds': False,
-                },
-                # 'conv_visibility': {
-                #     'inv_depth_sampling': True,
-                #     'num_depth_planes': 64,
-                #     'patch_size': [128, 128],
-                #     'offset: [32, 32],
-                # }
-            },
-            'model': {
-                'name': 'SnbNeRF50',
-                'use_coarse_mlp': True,
-                'use_fine_mlp': True,
-                'num_samples_coarse': 64,
-                'num_samples_fine': 128,
-                'chunk': 4*1024,
-                'lindisp': False,
-                'points_positional_encoding_degree': 10,
-                'views_positional_encoding_degree': 4,
-                'netchunk': 16*1024,
-                'netdepth_coarse': 8,
-                'netdepth_fine': 8,
-                'netwidth_coarse': 256,
-                'netwidth_fine': 256,
-                'perturb': True,
-                'raw_noise_std': 1.0,
-                'use_view_dirs': True,
-                'view_dependent_rgb': True,
-                'white_bkgd': False,
-                'predict_visibility': True,
-                # 'conv_visibility_predictor': {
-                #     'name': 'ConvVisibilityPredictor04'
-                # },
-            },
-            'losses': [
-                {
-                    'name': 'MSE08',
-                    'weight': 1,
-                    # 'iter_weights': {
-                    #     '0': 1, '40000': 10,
-                    # },
-                },
-                # {
-                #     'name': 'DepthVariance11',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 0, '10000': 0.1, '20000': 0.01,
-                #     # },
-                # },
-                {
-                    'name': 'VisibilityLoss09',
-                    'weight': 0.1,
-                    # 'iter_weights': {
-                    #     '0': 1e-2, '10000': 1e-1,  # '30000': 1e-2, '40000': 1e-1,  # '40000': 1,
-                    # },
-                },
-                # {
-                #     'name': 'VisibilityConsistencyLoss44',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001,
-                #     },
-                # },
-                # {
-                #     'name': 'ConvVisibilityLoss09',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.1,
-                #     },
-                # },
-                # {
-                #     'name': 'SpecularColorLoss01',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001
-                #     }
-                # },
-            ],
-            'optimizer': {
-                'lr_decayer_name': 'NeRFLearningRateDecayer01',
-                'lr_initial': 5e-4,
-                'lr_decay': 250,
-                'beta1': 0.9,
-                'beta2': 0.999,
-            },
-            'resume_training': True,
-            'num_iterations': 50000,
-            'validation_interval': 100000,
-            'validation_chunk_size': 64 * 1024,
-            'validation_save_loss_maps': False,
-            # 'num_validation_iterations': 10,
-            # 'sample_save_interval': 10000,
-            'model_save_interval': 10000,
-            'mixed_precision_training': False,
-            'seed': numpy.random.randint(1000),
-            # 'seed': 0,
-            'device': 'gpu0',
-        }
-        test_configs = {
-            'Tester': f'{this_filename}/{Tester.this_filename}',
-            'test_num': test_num,
-            'test_set_num': 4,
-            'train_num': train_num,
-            'model_name': 'Model_Iter050000.tar',
-            'database_name': 'NeRF_LLFF',
-            'database_dirpath': 'NeRF_LLFF/Data',
-            'resolution_suffix': train_configs['data_loader']['resolution_suffix'],
-            'scene_names': [scene_name],
-            'device': 'gpu0',
-        }
-        start_training(train_configs)
-        start_testing(test_configs)
-        # start_testing_videos(test_configs)
-        # start_testing_static_videos(test_configs)
-    return
-
-
-def demo1j():
-    train_num = 1267
-    test_num = 1267
-    scene_names = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
-    # scene_names = ['horns']
-
-    for scene_name in scene_names:
-        train_configs = {
-            'trainer': f'{this_filename}/{Trainer.this_filename}',
-            'train_num': train_num,
-            'database': 'NeRF_LLFF',
-            'database_dirpath': 'Databases/NeRF_LLFF/Data',
-            'data_loader': {
-                'data_loader_name': 'NerfLlffDataLoader19',
-                'data_preprocessor_name': 'DataPreprocessor39',
-                'train_set_num': 4,
-                'scene_names': [scene_name],
-                # 'scene_names': ['room', ],
-                'resolution_suffix': '_down4',
-                'recenter_camera_poses': True,
-                'bd_factor': 0.75,
-                'spherify': False,
-                'ndc': False,
-                'batching': True,
-                'downsampling_factor': 1,
-                'num_rays': 1024,
-                'precrop_fraction': 1,
-                'precrop_iterations': -1,
-                'visibility_consistency' : {
-                    'load_masks': False,
-                    'load_weights': False,
-                    'load_depth_thresholds': False,
-                },
-                'sparse_depth': {
-                    'dirname': 'DEL003_DE02',
-                    'num_rays': 1024,
-                },
-                # 'conv_visibility': {
-                #     'inv_depth_sampling': True,
-                #     'num_depth_planes': 64,
-                #     'patch_size': [128, 128],
-                #     'offset: [32, 32],
-                # }
-            },
-            'model': {
-                'name': 'SnbNeRF50',
-                'use_coarse_mlp': True,
-                'use_fine_mlp': True,
-                'num_samples_coarse': 64,
-                'num_samples_fine': 128,
-                'chunk': 4*1024,
-                'lindisp': False,
-                'points_positional_encoding_degree': 10,
-                'views_positional_encoding_degree': 4,
-                'netchunk': 16*1024,
-                'netdepth_coarse': 8,
-                'netdepth_fine': 8,
-                'netwidth_coarse': 256,
-                'netwidth_fine': 256,
-                'perturb': True,
-                'raw_noise_std': 1.0,
-                'use_view_dirs': True,
-                'view_dependent_rgb': True,
-                'white_bkgd': False,
-                'predict_visibility': True,
-                # 'conv_visibility_predictor': {
-                #     'name': 'ConvVisibilityPredictor04'
-                # },
-            },
-            'losses': [
-                {
-                    'name': 'MSE08',
-                    'weight': 1,
-                    # 'iter_weights': {
-                    #     '0': 1, '40000': 10,
-                    # },
-                },
-                # {
-                #     'name': 'DepthVariance11',
-                #     'weight': 0.1,
-                #     # 'iter_weights': {
-                #     #     '0': 0, '10000': 0.1, '20000': 0.01,
-                #     # },
-                # },
-                {
-                    'name': 'VisibilityLoss09',
-                    'weight': 0.1,
-                    # 'iter_weights': {
-                    #     '0': 1e-2, '10000': 1e-1,  # '30000': 1e-2, '40000': 1e-1,  # '40000': 1,
-                    # },
-                },
-                # {
-                #     'name': 'VisibilityConsistencyLoss44',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001,
-                #     },
-                # },
-                # {
-                #     'name': 'ConvVisibilityLoss09',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.1,
-                #     },
-                # },
-                # {
-                #     'name': 'SpecularColorLoss01',
-                #     'iter_weights': {
-                #         '0': 0, '20000': 0.001
-                #     }
-                # },
-                {
-                    "name": "SparseDepthMSE08",
-                    "weight": 0.1,
-                },
-            ],
-            'optimizer': {
-                'lr_decayer_name': 'NeRFLearningRateDecayer01',
-                'lr_initial': 5e-4,
-                'lr_decay': 250,
-                'beta1': 0.9,
-                'beta2': 0.999,
-            },
-            'resume_training': True,
-            'num_iterations': 50000,
-            'validation_interval': 100000,
-            'validation_chunk_size': 64 * 1024,
-            'validation_save_loss_maps': False,
-            # 'num_validation_iterations': 10,
-            # 'sample_save_interval': 10000,
-            'model_save_interval': 10000,
-            'mixed_precision_training': False,
-            'seed': numpy.random.randint(1000),
-            # 'seed': 0,
-            'device': 'gpu0',
-        }
-        test_configs = {
-            'Tester': f'{this_filename}/{Tester.this_filename}',
-            'test_num': test_num,
-            'test_set_num': 4,
-            'train_num': train_num,
-            'model_name': 'Model_Iter050000.tar',
-            'database_name': 'NeRF_LLFF',
-            'database_dirpath': 'NeRF_LLFF/Data',
-            'resolution_suffix': train_configs['data_loader']['resolution_suffix'],
-            'scene_names': [scene_name],
-            'device': 'gpu0',
-        }
-        start_training(train_configs)
-        start_testing(test_configs)
-        # start_testing_videos(test_configs)
-        # start_testing_static_videos(test_configs)
+        start_testing_videos(test_configs)
+        start_testing_static_videos(test_configs)
     return
 
 
 def demo2():
     configs = {
         'trainer': f'{this_filename}/{Trainer.this_filename}',
-        'train_num': 1231,
+        'train_num': 12,
         'resume_training': True,
     }
     start_training(configs)
@@ -1754,19 +1110,20 @@ def demo3():
     :return:
     """
     train_num = 1
-    loss_plots_dirpath = Path(f'../Runs/Training/Train{train_num:04}/Logs')
+    scene_name = 'horns'
+    loss_plots_dirpath = Path(f'../Runs/Training/Train{train_num:04}/{scene_name}/Logs')
     Trainer.save_plots(loss_plots_dirpath)
     import sys
     sys.exit(0)
 
 
 def demo4():
-    for train_num in [1241, 1244, 1245]:
+    for train_num in [12, 13, 14]:
         test_num = train_num
         test_configs = {
             'Tester': f'{this_filename}/{Tester.this_filename}',
             'test_num': test_num,
-            'test_set_num': 4,
+            'test_set_num': 2,
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'NeRF_LLFF',
@@ -1788,12 +1145,6 @@ def main():
     demo1f()
     demo1g()
     demo1h()
-    demo1i()
-    demo1j()
-    # demo1k()
-    # demo1l()
-    # demo2()
-    # demo4()
     return
 
 
@@ -1810,9 +1161,3 @@ if __name__ == '__main__':
     end_time = time.time()
     print('Program ended at ' + datetime.datetime.now().strftime('%d/%m/%Y %I:%M:%S %p'))
     print('Execution time: ' + str(datetime.timedelta(seconds=end_time - start_time)))
-
-    from snb_utils import Mailer
-
-    subject = f'VSR006/{this_filename}'
-    mail_content = f'Program ended.\n' + run_result
-    Mailer.send_mail(subject, mail_content)

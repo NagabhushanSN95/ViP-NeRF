@@ -314,8 +314,8 @@ def start_generation(gen_configs: dict):
 def demo1():
     gen_configs = {
         'generator': this_filename,
-        'gen_num': 9,
-        'gen_set_num': 12,
+        'gen_num': 12,
+        'gen_set_num': 2,
         'database_name': 'RealEstate10K',
         'database_dirpath': 'RealEstate10K/Data',
         'depths_dirname': 'VSL015_DE02',
@@ -325,8 +325,8 @@ def demo1():
 
     gen_configs = {
         'generator': this_filename,
-        'gen_num': 10,
-        'gen_set_num': 13,
+        'gen_num': 13,
+        'gen_set_num': 3,
         'database_name': 'RealEstate10K',
         'database_dirpath': 'RealEstate10K/Data',
         'depths_dirname': 'VSL015_DE03',
@@ -336,9 +336,9 @@ def demo1():
 
     gen_configs = {
         'generator': this_filename,
-        'gen_num': 11,
-        'gen_set_num': 14,
-        'database_name': 'ReslEstate10K',
+        'gen_num': 14,
+        'gen_set_num': 4,
+        'database_name': 'RealEstate10K',
         'database_dirpath': 'RealEstate10K/Data',
         'depths_dirname': 'VSL015_DE04',
         'temperature': 10,

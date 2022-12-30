@@ -1,7 +1,7 @@
 # Shree KRISHNAya Namaha
-# Extended Tester19.py. Predicted Visibility Masks saved for train frames.
+# Common tester across datasets
 # Author: Nagabhushan S N
-# Last Modified: 09/12/2022
+# Last Modified: 30/12/2022
 
 import json
 from pathlib import Path
@@ -16,7 +16,6 @@ from matplotlib import pyplot
 from tqdm import tqdm
 
 from data_preprocessors.DataPreprocessorFactory import get_data_preprocessor
-from loss_functions.LossComputer04 import LossComputer
 from models.ModelFactory import get_model
 from utils import CommonUtils01 as CommonUtils
 
@@ -42,8 +41,6 @@ class NerfTester:
     def build_model(self):
         self.data_preprocessor = get_data_preprocessor(self.train_configs, mode='test', model_configs=self.model_configs)
         self.model = get_model(self.train_configs, self.model_configs)
-
-        self.loss_computer = LossComputer(self.train_configs)
         return
 
     def load_model(self, model_path: Path):
@@ -56,7 +53,6 @@ class NerfTester:
         scene_dirname = model_path.parent.parent.stem
         model_name = model_path.stem
         print(f'Loaded Model in {train_dirname}/{scene_dirname}/{model_name} trained for {iter_num} iterations')
-        self.num_iters = iter_num
         return
 
     def predict_frame(self, camera_pose: numpy.ndarray, view_camera_pose: numpy.ndarray = None, secondary_poses: List[numpy.ndarray] = None,
@@ -67,8 +63,6 @@ class NerfTester:
 
         with torch.no_grad():
             output_dict = self.model(input_dict, sec_views_vis=secondary_poses is not None)
-        # input_dict['iter_num'] = self.num_iters
-        # iter_losses_dict = self.loss_computer.compute_losses(input_dict, output_dict)
 
         processed_output = self.data_preprocessor.retrieve_inference_outputs(output_dict)
         return processed_output
@@ -210,7 +204,6 @@ def start_testing(test_configs: dict, scenes_data: dict, output_dir_suffix: str 
                 inference_required = inference_required or (not depth_output_path.exists())
             if save_depth_var:
                 inference_required = inference_required or (not depth_var_output_path.exists())
-            # inference_required = frame_data['is_train_frame']
             # if save_visibility and scene_data['frames_data'][frame_num]['is_train_frame']:
             #     inference_required = inference_required or (not visibility_output_path.exists())
 
