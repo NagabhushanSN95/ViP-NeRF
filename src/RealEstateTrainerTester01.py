@@ -291,21 +291,21 @@ def demo1a():
             },
             'losses': [
                 {
-                    'name': 'MSE08',
+                    'name': 'MSE01',
                     'weight': 1,
                 },
                 {
-                    'name': 'VisibilityLoss09',
+                    'name': 'VisibilityLoss01',
                     'weight': 0.1,
                 },
                 {
-                    'name': 'VisibilityConsistencyLoss44',
+                    'name': 'VisibilityPriorLoss01',
                     'iter_weights': {
                         '0': 0, '30000': 0.001,
                     },
                 },
                 {
-                    "name": "SparseDepthMSE07",
+                    "name": "SparseDepthMSE01",
                     "weight": 0.1,
                 },
             ],
@@ -404,21 +404,21 @@ def demo1b():
             },
             'losses': [
                 {
-                    'name': 'MSE08',
+                    'name': 'MSE01',
                     'weight': 1,
                 },
                 {
-                    'name': 'VisibilityLoss09',
+                    'name': 'VisibilityLoss01',
                     'weight': 0.1,
                 },
                 {
-                    'name': 'VisibilityConsistencyLoss44',
+                    'name': 'VisibilityPriorLoss01',
                     'iter_weights': {
                         '0': 0, '30000': 0.001,
                     },
                 },
                 {
-                    "name": "SparseDepthMSE07",
+                    "name": "SparseDepthMSE01",
                     "weight": 0.1,
                 },
             ],
@@ -517,21 +517,21 @@ def demo1c():
             },
             'losses': [
                 {
-                    'name': 'MSE08',
+                    'name': 'MSE01',
                     'weight': 1,
                 },
                 {
-                    'name': 'VisibilityLoss09',
+                    'name': 'VisibilityLoss01',
                     'weight': 0.1,
                 },
                 {
-                    'name': 'VisibilityConsistencyLoss44',
+                    'name': 'VisibilityPriorLoss01',
                     'iter_weights': {
                         '0': 0, '30000': 0.001,
                     },
                 },
                 {
-                    "name": "SparseDepthMSE07",
+                    "name": "SparseDepthMSE01",
                     "weight": 0.1,
                 },
             ],
@@ -626,15 +626,15 @@ def demo1d():
             },
             'losses': [
                 {
-                    'name': 'MSE08',
+                    'name': 'MSE01',
                     'weight': 1,
                 },
                 {
-                    'name': 'VisibilityLoss09',
+                    'name': 'VisibilityLoss01',
                     'weight': 0.1,
                 },
                 {
-                    'name': 'VisibilityConsistencyLoss44',
+                    'name': 'VisibilityPriorLoss01',
                     'iter_weights': {
                         '0': 0, '20000': 0.001,
                     },
@@ -730,15 +730,15 @@ def demo1e():
             },
             'losses': [
                 {
-                    'name': 'MSE08',
+                    'name': 'MSE01',
                     'weight': 1,
                 },
                 {
-                    'name': 'VisibilityLoss09',
+                    'name': 'VisibilityLoss01',
                     'weight': 0.1,
                 },
                 {
-                    'name': 'VisibilityConsistencyLoss44',
+                    'name': 'VisibilityPriorLoss01',
                     'iter_weights': {
                         '0': 0, '20000': 0.001,
                     },
@@ -834,15 +834,15 @@ def demo1f():
             },
             'losses': [
                 {
-                    'name': 'MSE08',
+                    'name': 'MSE01',
                     'weight': 1,
                 },
                 {
-                    'name': 'VisibilityLoss09',
+                    'name': 'VisibilityLoss01',
                     'weight': 0.1,
                 },
                 {
-                    'name': 'VisibilityConsistencyLoss44',
+                    'name': 'VisibilityPriorLoss01',
                     'iter_weights': {
                         '0': 0, '20000': 0.001,
                     },
@@ -940,11 +940,11 @@ def demo1g():
             },
             'losses': [
                 {
-                    'name': 'MSE08',
+                    'name': 'MSE01',
                     'weight': 1,
                 },
                 {
-                    "name": "SparseDepthMSE07",
+                    "name": "SparseDepthMSE01",
                     "weight": 0.1,
                 },
                 {
@@ -1037,11 +1037,11 @@ def demo1h():
             },
             'losses': [
                 {
-                    'name': 'MSE08',
+                    'name': 'MSE01',
                     'weight': 1,
                 },
                 {
-                    'name': 'VisibilityLoss09',
+                    'name': 'VisibilityLoss01',
                     'weight': 0.1,
                 },
             ],

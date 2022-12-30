@@ -1,6 +1,5 @@
 # Shree KRISHNAya Namaha
 # In a ray, points corresponding to visible pixels should have high visibility in the other view
-# Extended from VisibilityConsistencyLoss44.py. Code cleaned for release.
 # Author: Nagabhushan S N
 # Last Modified: 30/12/2022
 

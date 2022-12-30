@@ -1,6 +1,5 @@
 # Shree KRISHNAya Namaha
 # MSE loss function on sparse depth
-# Extended from SparseDepthMSE07.py. Depth rays mask is obtained through indices_mask
 # Author: Nagabhushan S N
 # Last Modified: 08/12/2022
 
