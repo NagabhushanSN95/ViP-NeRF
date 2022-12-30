@@ -1,0 +1,11 @@
+Data/
+PretrainedModels/
+Runs/**/Training/Train*/**/*.png
+Runs/**/Training/Train*/**/*.npy
+Runs/**/Training/Train*/**/*.npz
+Runs/**/Training/Train*/**/*.tar
+Runs/**/Training/Train*/**/events*
+Runs/**/Testing/Test*/**/*.png
+Runs/**/Testing/Test*/**/*.mp4
+Runs/**/Testing/Test*/**/*.npy
+Runs/**/Testing/Test*/**/*.npz
