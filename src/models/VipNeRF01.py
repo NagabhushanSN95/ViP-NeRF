@@ -1,9 +1,7 @@
 # Shree KRISHNAya Namaha
 # NeRF that supports predicting visibility.
-# Extended from SnbNeRF45.py. ReLU used instead of Softplus for sigma. Visibility2 per pixel is also computed during
-# volume rendering.
 # Author: Nagabhushan S N
-# Last Modified: 08/12/2022
+# Last Modified: 02/01/2023
 
 import numpy
 import torch
@@ -12,7 +10,7 @@ import torch.nn.functional as F
 from utils import CommonUtils01 as CommonUtils
 
 
-class SnbNeRF(torch.nn.Module):
+class VipNeRF(torch.nn.Module):
     def __init__(self, configs: dict, model_configs: dict):
         super().__init__()
         self.configs = configs

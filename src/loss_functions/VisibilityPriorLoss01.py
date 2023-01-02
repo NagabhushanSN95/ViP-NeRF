@@ -11,7 +11,7 @@ import torch
 import torch.nn.functional as F
 
 from loss_functions import LossUtils01
-from loss_functions.LossFunctionParent02 import LossFunctionParent
+from loss_functions.LossFunctionParent01 import LossFunctionParent
 
 this_filepath = Path(__file__)
 this_filename = this_filepath.stem
