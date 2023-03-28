@@ -84,22 +84,25 @@ class Trainer:
         sub_batch_size = self.configs.get('sub_batch_size', actual_batch_size)
         iter_losses_dict = {}
         for start_idx in range(0, actual_batch_size, sub_batch_size):
-            sub_batch_dict = {}
+            sub_input_batch = {}
             for key in input_batch.keys():
                 if isinstance(input_batch[key], torch.Tensor):
-                    sub_batch_dict[key] = input_batch[key][start_idx: start_idx+sub_batch_size]
+                    sub_input_batch[key] = input_batch[key][start_idx: start_idx+sub_batch_size]
                 else:
-                    sub_batch_dict[key] = input_batch[key]
-            output_batch = self.model(sub_batch_dict)
-            sub_iter_losses_dict = self.loss_computer.compute_losses(sub_batch_dict, output_batch)
+                    sub_input_batch[key] = input_batch[key]
+            sub_output_batch = self.model(sub_input_batch)
+            sub_iter_losses_dict = self.loss_computer.compute_losses(sub_input_batch, sub_output_batch)
             sub_batch_loss = sub_iter_losses_dict['TotalLoss']
             sub_batch_loss.backward()
 
             iter_losses_dict = update_losses_dict_(iter_losses_dict, sub_iter_losses_dict, num_samples_=1)
-            delete_dict(output_batch)
-            delete_dict(input_batch)
-            del output_batch, input_batch
+            delete_dict(sub_output_batch)
+            delete_dict(sub_input_batch)
+            del sub_output_batch, sub_input_batch
         self.optimizer.step()
+
+        delete_dict(input_batch)
+        del input_batch
 
         return iter_losses_dict
 
