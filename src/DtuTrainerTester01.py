@@ -40,8 +40,7 @@ def save_video(path: Path, video: numpy.ndarray):
 
 def start_training(train_configs: dict):
     root_dirpath = Path('../')
-    project_dirpath = root_dirpath / '../../../../'
-    database_dirpath = project_dirpath / train_configs['database_dirpath']
+    database_dirpath = root_dirpath / 'Data/Databases' / train_configs['database_dirpath']
 
     # Setup output dirpath
     output_dirpath = root_dirpath / f'Runs/Training/Train{train_configs["train_num"]:04}'
@@ -63,8 +62,7 @@ def start_training(train_configs: dict):
 
 def start_testing(test_configs: dict):
     root_dirpath = Path('../')
-    project_dirpath = root_dirpath / '../../../../'
-    database_dirpath = project_dirpath / 'Databases' / test_configs['database_dirpath']
+    database_dirpath = root_dirpath / 'Data/Databases' / test_configs['database_dirpath']
 
     output_dirpath = root_dirpath / f"Runs/Testing/Test{test_configs['test_num']:04}"
     output_dirpath.mkdir(parents=True, exist_ok=True)
@@ -90,19 +88,15 @@ def start_testing(test_configs: dict):
         # Intrinsics and frames required to compute plane sweep volume for conv visibility prediction
         intrinsics_path = database_dirpath / f'all/DatabaseData/{scene_id}/CameraIntrinsics.csv'
         intrinsics = numpy.loadtxt(intrinsics_path.as_posix(), delimiter=',').reshape((-1, 3, 3))
-        frames_dirpath = database_dirpath / f'all/DatabaseData/{scene_id}/rgb'
 
         test_frame_nums = test_video_data.loc[test_video_data['scene_num'] == scene_num]['pred_frame_num'].to_list()
         train_frame_nums = train_video_data.loc[train_video_data['scene_num'] == scene_num]['pred_frame_num'].to_list()
         frame_nums = numpy.unique(sorted(test_frame_nums + train_frame_nums))
         for frame_num in frame_nums:
-            frame_path = frames_dirpath / f'{frame_num:04}.png'
-            frame = read_image(frame_path)
             scenes_data[scene_id]['frames_data'][frame_num] = {
                 'extrinsic': extrinsics[frame_num],
                 'intrinsic': intrinsics[frame_num],
                 'is_train_frame': frame_num in train_frame_nums,
-                'frame': frame,
             }
     Tester.start_testing(test_configs, scenes_data, save_depth=True, save_depth_var=True, save_visibility=True)
 
@@ -120,8 +114,7 @@ def start_testing(test_configs: dict):
 
 def start_testing_videos(test_configs: dict):
     root_dirpath = Path('../')
-    project_dirpath = root_dirpath / '../../../../'
-    database_dirpath = project_dirpath / 'Databases' / test_configs['database_dirpath']
+    database_dirpath = root_dirpath / 'Data/Databases' / test_configs['database_dirpath']
 
     output_dirpath = root_dirpath / f"Runs/Testing/Test{test_configs['test_num']:04}"
     output_dirpath.mkdir(parents=True, exist_ok=True)
@@ -179,8 +172,7 @@ def start_testing_static_videos(test_configs: dict):
     :return:
     """
     root_dirpath = Path('../')
-    project_dirpath = root_dirpath / '../../../../'
-    database_dirpath = project_dirpath / 'Databases' / test_configs['database_dirpath']
+    database_dirpath = root_dirpath / 'Data/Databases' / test_configs['database_dirpath']
 
     output_dirpath = root_dirpath / f"Runs/Testing/Test{test_configs['test_num']:04}"
     output_dirpath.mkdir(parents=True, exist_ok=True)
