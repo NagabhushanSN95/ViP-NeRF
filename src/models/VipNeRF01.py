@@ -1,13 +1,11 @@
 # Shree KRISHNAya Namaha
 # NeRF that supports predicting visibility.
 # Author: Nagabhushan S N
-# Last Modified: 02/01/2023
+# Last Modified: 20/03/2023
 
 import numpy
 import torch
 import torch.nn.functional as F
-
-from utils import CommonUtils01 as CommonUtils
 
 
 class VipNeRF(torch.nn.Module):
@@ -15,34 +13,29 @@ class VipNeRF(torch.nn.Module):
         super().__init__()
         self.configs = configs
         self.model_configs = model_configs
-        self.device = CommonUtils.get_device(self.configs['device'])
         self.ndc = self.configs['data_loader']['ndc']
-        self.coarse_mlp_needed = self.configs['model']['use_coarse_mlp']
-        self.fine_mlp_needed = self.configs['model']['use_fine_mlp']
-        self.predict_visibility = self.configs['model']['predict_visibility']
+        self.coarse_mlp_needed = 'coarse_mlp' in self.configs['model']
+        self.fine_mlp_needed = 'fine_mlp' in self.configs['model']
+        self.predict_visibility = self.configs['model']['coarse_mlp']['predict_visibility'] or self.configs['model']['fine_mlp']['predict_visibility']
 
-        self.pts_pos_enc_fn = None
-        self.views_pos_enc_fn = None
         self.coarse_model = None
         self.fine_model = None
         self.build_nerf()
         return
 
     def build_nerf(self):
-        self.pts_pos_enc_fn, pts_input_dim = self.get_positional_encoder(self.configs['model']['points_positional_encoding_degree'])
-
-        views_input_dim = 0
-        if self.configs['model']['use_view_dirs']:
-            self.views_pos_enc_fn, views_input_dim = self.get_positional_encoder(self.configs['model']['views_positional_encoding_degree'])
-
         if self.coarse_mlp_needed:
-            self.coarse_model = MLP(self.configs, pts_input_dim, views_input_dim).to(self.device)
+            self.coarse_model = MLP(self.configs, self.configs['model']['coarse_mlp'])
 
         if self.fine_mlp_needed:
-            self.fine_model = MLP(self.configs, pts_input_dim, views_input_dim).to(self.device)
+            self.fine_model = MLP(self.configs, self.configs['model']['coarse_mlp'])
         return
 
     def forward(self, input_batch: dict, retraw: bool = False, sec_views_vis: bool = False):
+        if 'common_data' in input_batch.keys():
+            # unpack common data
+            for key in input_batch['common_data'].keys():
+                input_batch['common_data'][key] = input_batch['common_data'][key][0]
         render_output_dict = self.render(input_batch, retraw=retraw or self.training, sec_views_vis=sec_views_vis or self.training)
         return render_output_dict
 
@@ -64,10 +57,6 @@ class VipNeRF(torch.nn.Module):
                     render_rays_dict[key] = input_dict[key][i:i+chunk]
                 elif isinstance(input_dict[key], numpy.ndarray) and (input_dict[key].shape[0] == num_rays):  # indices
                     render_rays_dict[key] = input_dict[key][i:i+chunk]
-                elif isinstance(input_dict[key], list) and (input_dict[key][0].shape[0] == num_rays):
-                    render_rays_dict[key] = []
-                    for i1 in range(len(input_dict[key])):
-                        render_rays_dict[key].append(input_dict[key][i1][i:i+chunk])
                 else:
                     render_rays_dict[key] = input_dict[key]
 
@@ -87,15 +76,15 @@ class VipNeRF(torch.nn.Module):
         if self.ndc:
             rays_o_ndc = input_dict['rays_o_ndc']
             rays_d_ndc = input_dict['rays_d_ndc']
-        if self.configs['model']['use_view_dirs']:
+        if self.configs['model']['coarse_mlp']['use_view_dirs'] or self.configs['model']['fine_mlp']['use_view_dirs']:
             # provide ray directions as input
             view_dirs = input_dict['view_dirs']
 
         if self.predict_visibility and sec_views_vis:
-            if 'rays_o2_list' in input_dict:
-                rays_o2 = input_dict['rays_o2_list']
+            if 'rays_o2' in input_dict:
+                rays_o2 = input_dict['rays_o2']  # (nr, nf-1, 3)
             else:
-                poses = input_dict['poses']
+                poses = input_dict['common_data']['poses']
                 pixel_id = input_dict['pixel_id']
                 image_id = pixel_id[:, 0].long()
                 num_frames = input_dict['num_frames']
@@ -103,8 +92,9 @@ class VipNeRF(torch.nn.Module):
                 for i in range(num_frames-1):
                     other_image_id = i + (i >= image_id).long()
                     poses2i = poses[other_image_id]  # (n, 3, 4)
-                    rays_o2i = poses2i[:, :, 3]  # (n, 3)
+                    rays_o2i = poses2i[:, :3, 3]  # (n, 3)
                     rays_o2.append(rays_o2i)
+                rays_o2 = torch.stack(rays_o2, dim=1)  # (nr, nf-1, 3)
 
         return_dict = {}
         if self.coarse_mlp_needed:
@@ -117,15 +107,12 @@ class VipNeRF(torch.nn.Module):
             network_input_coarse = {
                 'pts': pts_coarse,
             }
-            if self.configs['model']['use_view_dirs']:
+            if self.configs['model']['coarse_mlp']['use_view_dirs']:
                 network_input_coarse['view_dirs'] = view_dirs
 
-            if self.predict_visibility and sec_views_vis:
-                view_dirs2_list = []
-                for i in range(len(rays_o2)):
-                    view_dirs2 = self.compute_other_view_dirs(z_vals_coarse, rays_o, rays_d, rays_o2[i])
-                    view_dirs2_list.append(view_dirs2)
-                network_input_coarse['view_dirs2'] = view_dirs2_list
+            if self.coarse_model.predict_visibility and sec_views_vis:
+                view_dirs2 = self.compute_other_view_dirs(z_vals_coarse, rays_o, rays_d, rays_o2)
+                network_input_coarse['view_dirs2'] = view_dirs2
 
             network_output_coarse = self.run_network(network_input_coarse, self.coarse_model)
             if not self.ndc:
@@ -154,15 +141,12 @@ class VipNeRF(torch.nn.Module):
             network_input_fine = {
                 'pts': pts_fine,
             }
-            if self.configs['model']['use_view_dirs']:
+            if self.configs['model']['fine_mlp']['use_view_dirs']:
                 network_input_fine['view_dirs'] = view_dirs
 
-            if self.predict_visibility and sec_views_vis:
-                view_dirs2_list = []
-                for i in range(len(rays_o2)):
-                    view_dirs2 = self.compute_other_view_dirs(z_vals_fine, rays_o, rays_d, rays_o2[i])
-                    view_dirs2_list.append(view_dirs2)
-                network_input_fine['view_dirs2'] = view_dirs2_list
+            if self.fine_model.predict_visibility and sec_views_vis:
+                view_dirs2 = self.compute_other_view_dirs(z_vals_fine, rays_o, rays_d, rays_o2)
+                network_input_fine['view_dirs2'] = view_dirs2
 
             network_output_fine = self.run_network(network_input_fine, self.fine_model)
             if not self.ndc:
@@ -171,7 +155,7 @@ class VipNeRF(torch.nn.Module):
             else:
                 outputs_fine = self.volume_rendering(network_output_fine, z_vals_ndc=z_vals_fine, rays_d_ndc=rays_d_ndc,
                                                      rays_o=rays_o, rays_d=rays_d, sec_views_vis=sec_views_vis)
-            weights_fine = outputs_fine['weights']
+            # weights_fine = outputs_fine['weights']
 
             return_dict['z_vals_fine'] = z_vals_fine
             for key in outputs_fine:
@@ -197,8 +181,8 @@ class VipNeRF(torch.nn.Module):
             perturb = False
         lindisp = self.configs['model']['lindisp']
 
-        num_samples_coarse = self.configs['model']['num_samples_coarse']
-        t_vals = torch.linspace(0., 1., steps=num_samples_coarse)
+        num_samples_coarse = self.configs['model']['coarse_mlp']['num_samples']
+        t_vals = torch.linspace(0., 1., steps=num_samples_coarse).to(input_dict['rays_o'].device)
         if not lindisp:
             z_vals_coarse = near * (1.-t_vals) + far * t_vals
         else:
@@ -212,13 +196,13 @@ class VipNeRF(torch.nn.Module):
             upper = torch.cat([mids, z_vals_coarse[..., -1:]], -1)
             lower = torch.cat([z_vals_coarse[..., :1], mids], -1)
             # stratified samples in those intervals
-            t_rand = torch.rand(z_vals_coarse.shape)
+            t_rand = torch.rand(z_vals_coarse.shape).to(input_dict['rays_o'].device)
 
             z_vals_coarse = lower + (upper - lower) * t_rand
         return z_vals_coarse
 
     def get_z_vals_fine(self, z_vals_coarse, weights_coarse):
-        num_samples_fine = self.configs['model']['num_samples_fine']
+        num_samples_fine = self.configs['model']['fine_mlp']['num_samples']
         perturb = self.configs['model']['perturb']
         if not self.training:
             perturb = False
@@ -236,7 +220,7 @@ class VipNeRF(torch.nn.Module):
             tn = -(near + rays_o[..., 2]) / rays_d[..., 2]
             z_vals = (((rays_o[..., None, 2] + tn[..., None] * rays_d[..., None, 2]) / (1 - z_vals + 1e-6)) - rays_o[..., None, 2]) / rays_d[..., None, 2]
         pts = rays_o[..., None, :] + z_vals[..., None] * rays_d[..., None, :]
-        view_dirs_other = (pts - rays_o2[..., None, :])
+        view_dirs_other = (pts[:, :, None] - rays_o2[..., None, :, :])  # (nr, ns, nf-1, 3)
         view_dirs_other = view_dirs_other / torch.norm(view_dirs_other, dim=-1, keepdim=True)
         return view_dirs_other
 
@@ -251,10 +235,10 @@ class VipNeRF(torch.nn.Module):
 
         # Take uniform samples
         if det:
-            u = torch.linspace(0., 1., steps=N_samples)
+            u = torch.linspace(0., 1., steps=N_samples).to(weights.device)
             u = u.expand(list(cdf.shape[:-1]) + [N_samples])
         else:
-            u = torch.rand(list(cdf.shape[:-1]) + [N_samples])
+            u = torch.rand(list(cdf.shape[:-1]) + [N_samples]).to(weights.device)
 
         # Invert CDF
         u = u.contiguous()
@@ -281,33 +265,28 @@ class VipNeRF(torch.nn.Module):
         Prepares inputs and applies network 'nerf_mlp'.
         """
         pts_flat = torch.reshape(input_dict['pts'], [-1, input_dict['pts'].shape[-1]])
-        encoded_pts = self.pts_pos_enc_fn(pts_flat)
         network_input_dict = {
-            'pts': encoded_pts,
+            'pts': pts_flat,
         }
 
-        if self.configs['model']['use_view_dirs']:
+        if nerf_mlp.mlp_configs['use_view_dirs']:
             viewdirs = input_dict['view_dirs']
             if viewdirs.ndim == 2:
                 viewdirs = viewdirs[:,None].expand(input_dict['pts'].shape)
             viewdirs_flat = torch.reshape(viewdirs, [-1, viewdirs.shape[-1]])
-            encoded_view_dirs = self.views_pos_enc_fn(viewdirs_flat)
-            network_input_dict['view_dirs'] = encoded_view_dirs
+            network_input_dict['view_dirs'] = viewdirs_flat
 
-            if self.predict_visibility and ('view_dirs2' in input_dict):
+            if nerf_mlp.predict_visibility and ('view_dirs2' in input_dict):
                 view_dirs2 = input_dict['view_dirs2']
-                encoded_view_dirs2 = [self.views_pos_enc_fn(x) for x in view_dirs2]
-                view_dirs2_flat = [torch.reshape(x, [-1, x.shape[-1]]) for x in encoded_view_dirs2]
+                view_dirs2_flat = torch.reshape(view_dirs2, [-1, view_dirs2.shape[-2], view_dirs2.shape[-1]])  # (nr*ns, nf-1, 3)
                 network_input_dict['view_dirs2'] = view_dirs2_flat
 
+        nerf_mlp = nerf_mlp.to(pts_flat.device)
         network_output_dict = self.batchify(nerf_mlp)(network_input_dict)
 
         for k, v in network_output_dict.items():
             if isinstance(v, torch.Tensor):
-                network_output_dict[k] = torch.reshape(v, list(input_dict['pts'].shape[:-1]) + [v.shape[-1]])
-            elif isinstance(v, list) and isinstance(v[0], torch.Tensor):
-                for i in range(len(v)):
-                    network_output_dict[k][i] = torch.reshape(v[i], list(input_dict['pts'].shape[:-1]) + [v[i].shape[-1]])
+                network_output_dict[k] = torch.reshape(v, list(input_dict['pts'].shape[:-1]) + list(v.shape[1:]))
             else:
                 raise NotImplementedError
         return network_output_dict
@@ -327,8 +306,6 @@ class VipNeRF(torch.nn.Module):
                 for key in input_dict:
                     if isinstance(input_dict[key], torch.Tensor):
                         network_input_chunk[key] = input_dict[key][i:i+chunk]
-                    elif isinstance(input_dict[key], list) and isinstance(input_dict[key][0], torch.Tensor):
-                        network_input_chunk[key] = [input_dict[key][j][i:i+chunk] for j in range(len(input_dict[key]))]
                     else:
                         raise RuntimeError(key)
 
@@ -339,21 +316,12 @@ class VipNeRF(torch.nn.Module):
                         network_output_chunks[k] = []
                     if isinstance(network_output_chunk[k], torch.Tensor):
                         network_output_chunks[k].append(network_output_chunk[k])
-                    elif isinstance(network_output_chunk[k], list) and isinstance(network_output_chunk[k][0], torch.Tensor):
-                        if len(network_output_chunks[k]) == 0:
-                            for j in range(len(network_output_chunk[k])):
-                                network_output_chunks[k].append([])
-                        for j in range(len(network_output_chunk[k])):
-                            network_output_chunks[k][j].append(network_output_chunk[k][j])
                     else:
                         raise RuntimeError
 
             for k in network_output_chunks:
                 if isinstance(network_output_chunks[k][0], torch.Tensor):
                     network_output_chunks[k] = torch.cat(network_output_chunks[k], dim=0)
-                elif isinstance(network_output_chunks[k][0], list) and isinstance(network_output_chunks[k][0][0], torch.Tensor):
-                    for j in range(len(network_output_chunks[k])):
-                        network_output_chunks[k][j] = torch.cat(network_output_chunks[k][j], dim=0)
                 else:
                     raise NotImplementedError
             return network_output_chunks
@@ -362,13 +330,13 @@ class VipNeRF(torch.nn.Module):
     def volume_rendering(self, network_output_dict, z_vals=None, rays_o=None, rays_d=None, z_vals_ndc=None,
                          rays_d_ndc=None, sec_views_vis=False):
         if not self.ndc:
-            inf_depth = 1e10
-            z_vals1 = torch.cat([z_vals, torch.Tensor([inf_depth]).expand(z_vals[...,:1].shape)], -1)
+            inf_depth = torch.Tensor([1e10]).to(rays_d.device)
+            z_vals1 = torch.cat([z_vals, inf_depth.expand(z_vals[...,:1].shape)], -1)
             z_dists = z_vals1[...,1:] - z_vals1[...,:-1]  # [N_rays, N_samples]
             delta = z_dists * torch.norm(rays_d[...,None,:], dim=-1)
         else:
-            inf_depth = 1
-            z_vals1 = torch.cat([z_vals_ndc, torch.Tensor([inf_depth]).expand(z_vals_ndc[...,:1].shape)], -1)
+            inf_depth = torch.Tensor([1]).to(rays_d.device)
+            z_vals1 = torch.cat([z_vals_ndc, inf_depth.expand(z_vals_ndc[...,:1].shape)], -1)
             z_dists = z_vals1[...,1:] - z_vals1[...,:-1]  # [N_rays, N_samples]
             delta = z_dists * torch.norm(rays_d_ndc[...,None,:], dim=-1)
 
@@ -376,7 +344,7 @@ class VipNeRF(torch.nn.Module):
         sigma = network_output_dict['sigma'][..., 0]  # [N_rays, N_samples]
 
         alpha = 1. - torch.exp(-sigma * delta)  # [N_rays, N_samples]
-        visibility = torch.cumprod(torch.cat([torch.ones((alpha.shape[0], 1)), 1.-alpha + 1e-10], -1), -1)[:, :-1]
+        visibility = torch.cumprod(torch.cat([torch.ones((alpha.shape[0], 1)).to(rays_d.device), 1.-alpha + 1e-10], -1), -1)[:, :-1]
         weights = alpha * visibility
         rgb_map = torch.sum(weights[...,None] * rgb, dim=-2)  # [N_rays, 3]
 
@@ -408,9 +376,9 @@ class VipNeRF(torch.nn.Module):
             return_dict['depth_ndc'] = depth_map_ndc
             return_dict['depth_var_ndc'] = depth_var_map_ndc
 
-        if self.predict_visibility and sec_views_vis:
+        if self.predict_visibility and sec_views_vis and ('visibility2' in network_output_dict):
             vis2_point3d = network_output_dict['visibility2']
-            vis2_pixel = [torch.sum(weights * vis[..., 0], dim=-1) / (acc_map + 1e-6) for vis in vis2_point3d]
+            vis2_pixel = torch.sum(weights[..., None] * vis2_point3d[..., 0], dim=-2) / (acc_map[..., None] + 1e-6)  # (nr, nf-1)
             return_dict['visibility2'] = vis2_pixel
         return return_dict
 
@@ -434,71 +402,42 @@ class VipNeRF(torch.nn.Module):
         return depth
 
     @staticmethod
-    def get_positional_encoder(degree):
-        pos_enc_kwargs = {
-            'include_input': True,
-            'input_dims': 3,
-            'max_freq_log2': degree - 1,
-            'num_freqs': degree,
-            'log_sampling': True,
-            'periodic_fns': [torch.sin, torch.cos],
-        }
-
-        pos_enc = PositionalEncoder(**pos_enc_kwargs)
-        pos_enc_fn = pos_enc.encode
-        return pos_enc_fn, pos_enc.out_dim
-
-    @staticmethod
-    def append_to_dict_element(data_dict: dict, key: str, new_element):
-        """
-        Appends the `new_element` to the list identified by `key` in the dictionary `data_dict`
-        """
-        if key not in data_dict:
-            data_dict[key] = []
-        data_dict[key].append(new_element)
-        return
-
-    @staticmethod
     def merge_mini_batch_data(data_chunks: dict):
         merged_data = {}
         for key in data_chunks:
             if isinstance(data_chunks[key][0], torch.Tensor):
                 merged_data[key] = torch.cat(data_chunks[key], dim=0)
-            elif isinstance(data_chunks[key][0], list):
-                merged_data[key] = []
-                for i in range(len(data_chunks[key][0])):
-                    merged_data[key].append(torch.cat([data_chunks[key][j][i] for j in range(len(data_chunks[key]))], dim=0))
             else:
                 raise NotImplementedError
         return merged_data
 
 
 class PositionalEncoder:
-    def __init__(self, **kwargs):
-        self.kwargs = kwargs
+    def __init__(self, configs):
+        self.configs = configs
         self.out_dim = None
         self.pos_enc_fns = []
         self.create_pos_enc_fns()
         return
 
     def create_pos_enc_fns(self):
-        d = self.kwargs['input_dims']
+        d = self.configs['input_dims']
         out_dim = 0
-        if self.kwargs['include_input']:
+        if self.configs['include_input']:
             self.pos_enc_fns.append(lambda x: x)
             out_dim += d
 
-        max_freq = self.kwargs['max_freq_log2']
-        N_freqs = self.kwargs['num_freqs']
+        max_freq = self.configs['max_freq_log2']
+        N_freqs = self.configs['num_freqs']
 
-        if self.kwargs['log_sampling']:
+        if self.configs['log_sampling']:
             freq_bands = 2.**torch.linspace(0., max_freq, steps=N_freqs)
         else:
             freq_bands = torch.linspace(2.**0., 2.**max_freq, steps=N_freqs)
 
         for freq in freq_bands:
-            for p_fn in self.kwargs['periodic_fns']:
-                self.pos_enc_fns.append(lambda x, p_fn=p_fn, freq=freq : p_fn(x * freq))
+            for p_fn in self.configs['periodic_fns']:
+                self.pos_enc_fns.append(lambda x, p_fn=p_fn, freq=freq : p_fn(x * freq.to(x.device)))
                 out_dim += d
 
         self.out_dim = out_dim
@@ -509,22 +448,23 @@ class PositionalEncoder:
 
 
 class MLP(torch.nn.Module):
-    def __init__(self, configs, pts_input_dim=3, views_input_dim=3, coarse=True):
+    def __init__(self, configs, mlp_configs):
         """
         """
         super(MLP, self).__init__()
         self.configs = configs
-        if coarse:
-            self.D = self.configs['model']['netdepth_coarse']
-            self.W = self.configs['model']['netwidth_coarse']
-        else:
-            self.D = self.configs['model']['netdepth_fine']
-            self.W = self.configs['model']['netwidth_fine']
-        self.pts_input_dim = pts_input_dim
-        self.views_input_dim = views_input_dim
+        self.mlp_configs = mlp_configs
+        self.D = self.mlp_configs['netdepth']
+        self.W = self.mlp_configs['netwidth']
+
+        self.pts_pos_enc_fn, self.pts_input_dim = self.get_positional_encoder(self.mlp_configs['points_positional_encoding_degree'])
+        self.views_input_dim = 0
+        if self.mlp_configs['use_view_dirs']:
+            self.views_pos_enc_fn, self.views_input_dim = self.get_positional_encoder(self.mlp_configs['views_positional_encoding_degree'])
+
         self.skips = [4]
-        self.view_dep_rgb = self.configs['model']['view_dependent_rgb']
-        self.predict_visibility = self.configs['model']['predict_visibility']
+        self.view_dep_rgb = self.mlp_configs['view_dependent_rgb']
+        self.predict_visibility = self.mlp_configs['predict_visibility']
         self.view_dep_outputs = self.view_dep_rgb or self.predict_visibility
         self.raw_noise_std = self.configs['model']['raw_noise_std']
 
@@ -550,27 +490,42 @@ class MLP(torch.nn.Module):
             self.views_output_linear = torch.nn.Linear(self.W // 2, views_output_dim)
         return
 
+    def get_positional_encoder(self, degree):
+        pos_enc_kwargs = {
+            'include_input': True,
+            'input_dims': 3,
+            'max_freq_log2': degree - 1,
+            'num_freqs': degree,
+            'log_sampling': True,
+            'periodic_fns': [torch.sin, torch.cos],
+        }
+
+        pos_enc = PositionalEncoder(pos_enc_kwargs)
+        pos_enc_fn = pos_enc.encode
+        return pos_enc_fn, pos_enc.out_dim
+
     def forward(self, input_batch):
         input_pts = input_batch['pts']
-        input_views = input_batch['view_dirs']
         output_batch = {}
 
-        pts_outputs = self.get_view_independent_outputs(input_pts)
+        encoded_pts = self.pts_pos_enc_fn(input_pts)
+        pts_outputs = self.get_view_independent_outputs(encoded_pts)
         output_batch.update(pts_outputs)
         if not self.view_dep_rgb:
             rgb = pts_outputs['rgb_view_independent']
 
         if self.view_dep_outputs:
-            view_outputs = self.get_view_dependent_outputs(pts_outputs, input_views)
+            input_views = input_batch['view_dirs']
+            encoded_views = self.views_pos_enc_fn(input_views)
+            view_outputs = self.get_view_dependent_outputs(pts_outputs, encoded_views)
             output_batch.update(view_outputs)
             if self.view_dep_rgb:
                 rgb = view_outputs['rgb_view_dependent']
 
             if 'view_dirs2' in input_batch.keys():
-                output_batch['visibility2'] = []
-                for view_dirs2 in input_batch['view_dirs2']:
-                    view_outputs2 = self.get_view_dependent_outputs(pts_outputs, view_dirs2)
-                    output_batch['visibility2'].append(view_outputs2['visibility'])
+                encoded_views2 = self.views_pos_enc_fn(input_batch['view_dirs2'])
+                view_outputs2 = self.get_view_dependent_outputs(pts_outputs, encoded_views2)
+                output_batch['visibility2'] = view_outputs2['visibility']
         output_batch['rgb'] = rgb
 
         if 'feature' in output_batch:
@@ -591,7 +546,7 @@ class MLP(torch.nn.Module):
 
         sigma = pts_output[..., ch_i:ch_i + 1]
         if self.training and (self.raw_noise_std > 0.):
-            noise = torch.randn(sigma.shape) * self.raw_noise_std
+            noise = torch.randn(sigma.shape).to(sigma.device) * self.raw_noise_std
             sigma = sigma + noise
         sigma = F.relu(sigma)
         output_dict['sigma'] = sigma
@@ -612,6 +567,10 @@ class MLP(torch.nn.Module):
         output_dict = {}
 
         feature = pts_outputs['feature']
+        if input_views.ndim == 3:
+            # For viewdirs2
+            nf = input_views.shape[1] + 1
+            feature = feature[:, None, :].repeat([1, nf-1, 1])  # (nc, nf-1, cv)
         h = torch.cat([feature, input_views], -1)
 
         for i, l in enumerate(self.views_linears):

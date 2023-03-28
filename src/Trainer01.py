@@ -59,6 +59,20 @@ class Trainer:
         return
 
     def train_one_iter(self, iter_num: int):
+        def update_losses_dict_(iter_losses_dict_: dict, sub_iter_losses_dict_: dict, num_samples_: int):
+            if iter_losses_dict_ is None:
+                iter_losses_dict_ = {}
+                for loss_name_ in sub_iter_losses_dict_.keys():
+                    loss_value_ = sub_iter_losses_dict_[loss_name_]
+                    loss_value_ = loss_value_['loss_value'] if isinstance(loss_value_, dict) else loss_value_
+                    iter_losses_dict_[loss_name_] = loss_value_.item() * num_samples_
+            else:
+                for loss_name_ in iter_losses_dict_.keys():
+                    loss_value_ = sub_iter_losses_dict_[loss_name_]
+                    loss_value_ = loss_value_['loss_value'] if isinstance(loss_value_, dict) else loss_value_
+                    iter_losses_dict_[loss_name_] += (loss_value_.item() * num_samples_)
+            return iter_losses_dict_
+
         def delete_dict(dict_data_: dict):
             for key_ in list(dict_data_.keys()):
                 del dict_data_[key_]
@@ -66,14 +80,26 @@ class Trainer:
 
         input_batch = self.train_data_loader.get_next_batch(iter_num)
         self.optimizer.zero_grad(set_to_none=True)
-        output_batch = self.model(input_batch)
-        iter_losses_dict = self.loss_computer.compute_losses(input_batch, output_batch)
-        iter_losses_dict['TotalLoss'].backward()
-        self.optimizer.step()
+        actual_batch_size = input_batch['rays_o'].shape[0]
+        sub_batch_size = self.configs.get('sub_batch_size', actual_batch_size)
+        iter_losses_dict = {}
+        for start_idx in range(0, actual_batch_size, sub_batch_size):
+            sub_batch_dict = {}
+            for key in input_batch.keys():
+                if isinstance(input_batch[key], torch.Tensor):
+                    sub_batch_dict[key] = input_batch[key][start_idx: start_idx+sub_batch_size]
+                else:
+                    sub_batch_dict[key] = input_batch[key]
+            output_batch = self.model(sub_batch_dict)
+            sub_iter_losses_dict = self.loss_computer.compute_losses(sub_batch_dict, output_batch)
+            sub_batch_loss = sub_iter_losses_dict['TotalLoss']
+            sub_batch_loss.backward()
 
-        delete_dict(output_batch)
-        delete_dict(input_batch)
-        del output_batch, input_batch
+            iter_losses_dict = update_losses_dict_(iter_losses_dict, sub_iter_losses_dict, num_samples_=1)
+            delete_dict(output_batch)
+            delete_dict(input_batch)
+            del output_batch, input_batch
+        self.optimizer.step()
 
         return iter_losses_dict
 
@@ -107,13 +133,6 @@ class Trainer:
                         (input_batch_[key].shape[0] == num_pixels):
                     for i_ in range(num_batches):
                         input_batches_[i_][key] = input_batch_[key][i_ * chunk_size_: (i_ + 1) * chunk_size_]
-                elif isinstance(input_batch_[key], list) and isinstance(input_batch_[key][0], torch.Tensor) and \
-                        (input_batch_[key][0].shape[0] == num_pixels):
-                    for i_ in range(num_batches):
-                        input_batches_[i_][key] = []
-                    for list_element in input_batch_[key]:
-                        for i_ in range(num_batches):
-                            input_batches_[i_][key].append(list_element[i_ * chunk_size_: (i_ + 1) * chunk_size_])
                 else:
                     for i_ in range(num_batches):
                         input_batches_[i_][key] = input_batch_[key]
@@ -126,11 +145,6 @@ class Trainer:
                     output_batch_[key] = torch.cat([output_batch_chunk_[key] for output_batch_chunk_ in output_batches_], dim=0)
                 elif isinstance(output_batches_[0][key], torch.Tensor) and (output_batches_[0][key].numel() == 1):  # TotalLoss
                     output_batch_[key] = torch.mean(torch.stack([output_batch_chunk_[key] for output_batch_chunk_ in output_batches_]))
-                elif isinstance(output_batches_[0][key], list) and isinstance(output_batches_[0][key][0], torch.Tensor) and (output_batches_[0][key][0].numel() > 1):
-                    output_batch_[key] = []
-                    for i_ in range(len(output_batches_[0][key])):
-                        merged_elem = torch.cat([output_batch_chunk_[key][i_] for output_batch_chunk_ in output_batches_], dim=0)
-                        output_batch_[key].append(merged_elem)
                 elif isinstance(output_batches_[0][key], dict):
                     output_batch_[key] = {}
                     inner_dict1 = output_batches_[0][key]
@@ -166,19 +180,20 @@ class Trainer:
         train_data = data_loader.mode == 'train'
         frame_nums = data_loader.preprocessed_data_dict['frame_nums']
         for i, frame_num in enumerate(frame_nums):
-            input_batch = data_loader.get_next_batch(iter_num, i)
-            input_batch = CommonUtils.move_to_device(input_batch, self.device)
+            input_batch = data_loader.get_next_batch(iter_num, frame_num)
             input_batches = divide_input_batch_(input_batch, chunk_size)
             output_batches, frame_losses_dicts = [], []
             for input_batch_chunk in input_batches:
                 with torch.no_grad():
                     output_batch_chunk = self.model(input_batch_chunk, retraw=True, sec_views_vis=train_data)
-                frame_losses_dict_chunk = self.loss_computer.compute_losses(input_batch_chunk, output_batch_chunk, training=False)
+                frame_losses_dict_chunk = self.loss_computer.compute_losses(input_batch_chunk, output_batch_chunk,
+                                              return_loss_maps=self.configs['validation_save_loss_maps'])
                 useless_output_keys = [
                     'z_vals_coarse', 'z_vals_other_coarse',
                     'raw_sigma_coarse', 'raw_sigma_other_coarse',
-                    'raw_rgb_coarse', 'raw_rgb_view_independent_coarse',
+                    'raw_rgb_coarse', 'raw_rgb_view_independent_coarse', 'raw_rgb_view_dependent_coarse',
                     'raw_rgb_other_coarse', 'raw_rgb_view_independent_other_coarse', 'raw_rgb_view_dependent_other_coarse',
+                    'raw_visibility_coarse', 'raw_visibility2_coarse',
                     'alpha_coarse', 'visibility_coarse', 'weights_coarse',
                     'alpha_other_coarse', 'visibility_other_coarse', 'weights_other_coarse',
                     'rays_d2_coarse', 'rays_o2_ndc_coarse', 'rays_d2_ndc_coarse',
@@ -187,8 +202,9 @@ class Trainer:
                     'depth_ndc_other_coarse', 'depth_var_ndc_other_coarse',
                     'z_vals_fine', 'z_vals_other_fine',
                     'raw_sigma_fine', 'raw_sigma_other_fine',
-                    'raw_rgb_fine', 'raw_rgb_view_independent_fine',
+                    'raw_rgb_fine', 'raw_rgb_view_independent_fine', 'raw_rgb_view_dependent_fine',
                     'raw_rgb_other_fine', 'raw_rgb_view_independent_other_fine', 'raw_rgb_view_dependent_other_fine',
+                    'raw_visibility_fine', 'raw_visibility2_fine',
                     'alpha_fine', 'visibility_fine', 'weights_fine',
                     'alpha_other_fine', 'visibility_other_fine', 'weights_other_fine',
                     'rays_d2_fine', 'rays_o2_ndc_fine', 'rays_d2_ndc_fine',
@@ -221,6 +237,10 @@ class Trainer:
                 self.save_numpy_array(depth_var_output_path, post_process_output_(output_batch[f'depth_var_{mode}'], resolution), as_png=True)
                 if f'depth_var_ndc_{mode}' in output_batch:
                     self.save_numpy_array(depth_var_ndc_output_path, post_process_output_(output_batch[f'depth_var_ndc_{mode}'], resolution), as_png=True)
+                if f'visibility2_{mode}' in output_batch:
+                    for j, sec_frame_num in enumerate([x for x in frame_nums if x != frame_num]):
+                        vis2_output_path = save_dirpath / f'PredictedVisibilities/{frame_num:04}_{sec_frame_num:04}_{mode}_Iter{iter_num + 1:05}.npy'
+                        self.save_numpy_array(vis2_output_path, post_process_output_(output_batch[f'visibility2_{mode}'][:, j], resolution), as_png=True)
 
             # Save all loss maps
             if self.configs['validation_save_loss_maps']:
@@ -287,7 +307,7 @@ class Trainer:
             if (iter_num + 1) >= total_num_iters:
                 break
 
-        save_plots(logs_dirpath)
+        # save_plots(logs_dirpath)
         return
 
     def save_sample_images(self, iter_num, save_dirpath):
@@ -401,11 +421,13 @@ def save_plots(logs_dirpath: Path):
     return
 
 
-def init_seeds(seed: int = 1):
+def init_seeds(seed: int = 0):
     os.environ['PYTHONHASHSEED'] = str(seed)
     random.seed(seed)
     numpy.random.seed(seed)
     torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
     return
 
 
@@ -461,14 +483,6 @@ def start_training(configs: dict):
     project_dirpath = root_dirpath / '../../../../'
     database_dirpath = project_dirpath / configs['database_dirpath']
     output_dirpath = root_dirpath / f'Runs/Training/Train{configs["train_num"]:04}'
-
-    device = CommonUtils.get_device(configs['device'])
-    if device.type == 'cuda':
-        torch.set_default_tensor_type('torch.cuda.FloatTensor')
-    elif device.type == 'cpu':
-        torch.set_default_tensor_type('torch.FloatTensor')
-    else:
-        raise RuntimeError(f'Unknown device type: {device.type}')
     
     scene_ids = configs['data_loader']['scene_ids']
     for scene_id in scene_ids:
@@ -491,6 +505,7 @@ def start_training(configs: dict):
                                                       model_configs=train_data_preprocessor.get_model_configs())
         model_configs = train_data_preprocessor.get_model_configs()
         model = get_model(configs, model_configs)
+        model = torch.nn.DataParallel(model, device_ids=configs['device'])
         loss_computer = LossComputer(configs)
         optimizer = torch.optim.Adam(list(model.parameters()), lr=configs['optimizer']['lr_initial'],
                                      betas=(configs['optimizer']['beta1'], configs['optimizer']['beta2']))

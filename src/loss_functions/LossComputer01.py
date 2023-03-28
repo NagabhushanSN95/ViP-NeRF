@@ -1,6 +1,6 @@
 # Shree KRISHNAya Namaha
 # Computes all specified losses
-# Extended from LossComputer03.py. Supports loss maps also
+# Computes all the required losses by calling appropriate functions
 # Author: Nagabhushan S N
 # Last Modified: 11/09/2022
 
@@ -29,14 +29,14 @@ class LossComputer:
             raise RuntimeError(f'Unknown Loss Function: {loss_name}')
         return loss_obj
 
-    def compute_losses(self, input_dict, output_dict, training: bool = True):
+    def compute_losses(self, input_dict, output_dict, return_loss_maps: bool = False):
         loss_values = {}
         total_loss = 0
         iter_num = input_dict['iter_num']
         for loss_name in self.losses.keys():
             loss_obj = self.losses[loss_name]
             loss_weight = self.get_loss_weight(loss_obj, iter_num)
-            loss_dict = loss_obj.compute_loss(input_dict, output_dict, training)
+            loss_dict = loss_obj.compute_loss(input_dict, output_dict, return_loss_maps=return_loss_maps)
             # loss_dict may be None for visibility consistency loss for validation images during validation.
             if loss_dict is not None:
                 loss_values[loss_name] = loss_dict

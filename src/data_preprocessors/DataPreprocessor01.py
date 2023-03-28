@@ -1,8 +1,7 @@
 # Shree KRISHNAYa Namaha
 # Preprocesses data for NeRF, MipNeRF, Colmap sparse depth, dense depth, visibility prior.
-# Extended from DataPreprocessor39.py. Code cleaned for release.
 # Author: Nagabhushan S N
-# Last Modified: 30/12/2022
+# Last Modified: 28/03/2023
 
 from typing import Optional, Union, Tuple, List
 
@@ -66,10 +65,10 @@ class DataPreprocessor(DataPreprocessorParent):
         # Create model configs to save
         model_configs = {
             'resolution': preprocessed_data_dict['nerf_data']['resolution'],
-            'focal_length': list(preprocessed_data_dict['nerf_data']['focal_length']),
             'bounds': preprocessed_data_dict['nerf_data']['bounds'].tolist(),
             'translation_scale': preprocessed_data_dict['nerf_data'].get('sc', 1),
             f'{self.mode}_frame_nums': preprocessed_data_dict['frame_nums'].tolist(),
+            'intrinsic': numpy.mean(preprocessed_data_dict['nerf_data']['intrinsics'], axis=0).tolist(),
             'average_pose': preprocessed_data_dict['nerf_data']['average_pose'].tolist(),
             'near': preprocessed_data_dict['nerf_data']['near'],
             'far': preprocessed_data_dict['nerf_data']['far'],
@@ -103,10 +102,10 @@ class DataPreprocessor(DataPreprocessorParent):
 
     def preprocess_raw_nerf_data(self, raw_data_dict: dict, processed_data_dict: dict):
         images = raw_data_dict['nerf_data']['images']
-        poses = raw_data_dict['nerf_data']['poses']
+        poses = raw_data_dict['nerf_data']['extrinsics']
+        intrinsics = raw_data_dict['nerf_data']['intrinsics']
         bds = raw_data_dict['nerf_data']['bounds']
         resolution = raw_data_dict['nerf_data']['resolution']
-        focal_length = raw_data_dict['nerf_data']['focal_length']
 
         images = self.preprocess_images(images)
         resolution = [int(x) for x in resolution]
@@ -114,12 +113,12 @@ class DataPreprocessor(DataPreprocessorParent):
         if self.downsampling_factor > 1:
             images = numpy.stack([skimage.transform.rescale(image, 1/self.downsampling_factor, anti_aliasing=True, multichannel=True) for image in images])
             resolution = [x // self.downsampling_factor for x in resolution]
-            focal_length = [x / self.downsampling_factor for x in focal_length]
+            intrinsics[:, :2] /= self.downsampling_factor
 
         return_dict = {
             'images': images,
             'resolution': resolution,
-            'focal_length': focal_length,
+            'intrinsics': intrinsics.astype('float32'),
         }
 
         if self.mode == 'train':
@@ -167,16 +166,17 @@ class DataPreprocessor(DataPreprocessorParent):
         h, w = raw_data_dict['nerf_data']['resolution']
         depths, reproj_errors = [], []
         for frame_num in raw_data_dict['frame_nums']:
-            frame_depth_data = raw_data_dict['sparse_depth_data'][frame_num]
             depth = -1 * numpy.ones((h, w))
             reproj_error = -1 * numpy.ones((h, w))
-            x, y = frame_depth_data['x'].to_numpy(), frame_depth_data['y'].to_numpy()
-            if self.downsampling_factor > 1:
-                x = x / self.downsampling_factor
-                y = y / self.downsampling_factor
-            x, y = numpy.round(x).astype('int'), numpy.round(y).astype('int')
-            depth[y, x] = frame_depth_data['depth'].to_numpy() * sc
-            reproj_error[y, x] = frame_depth_data['reprojection_error'].to_numpy()
+            if frame_num in raw_data_dict['sparse_depth_data']:
+                frame_depth_data = raw_data_dict['sparse_depth_data'][frame_num]
+                x, y = frame_depth_data['x'].to_numpy(), frame_depth_data['y'].to_numpy()
+                if self.downsampling_factor > 1:
+                    x = x / self.downsampling_factor
+                    y = y / self.downsampling_factor
+                x, y = numpy.round(x).astype('int'), numpy.round(y).astype('int')
+                depth[y, x] = frame_depth_data['depth'].to_numpy() * sc
+                reproj_error[y, x] = frame_depth_data['reprojection_error'].to_numpy()
             depths.append(depth)
             reproj_errors.append(reproj_error)
         return_dict['depths'] = numpy.stack(depths)
@@ -269,17 +269,20 @@ class DataPreprocessor(DataPreprocessorParent):
     def preprocess_nerf_data(self, data_dict: dict, cache_data_dict: dict):
         images = data_dict['nerf_data']['images']
         poses = data_dict['nerf_data']['poses']
-        h, w = data_dict['nerf_data']['resolution']
-        fx, fy = data_dict['nerf_data']['focal_length']
+        intrinsics = data_dict['nerf_data']['intrinsics']
+        resolution = data_dict['nerf_data']['resolution']
         near = data_dict['nerf_data']['near']
-        
+        h, w = resolution
+
         # For random ray batching
         rays_o_list = []
         rays_d_list = []
         pixel_id_list = []
+        if self.ndc:
+            rays_o_ndc_list = []
+            rays_d_ndc_list = []
         for i in range(poses.shape[0]):
-            pose1 = poses[i, :3, :4]
-            image_rays_o, image_rays_d = self.get_rays(h, w, fx, fy, pose1)
+            image_rays_o, image_rays_d = self.get_rays(resolution, intrinsics[i], poses[i])
             rays_o_list.append(image_rays_o)
             rays_d_list.append(image_rays_d)
 
@@ -288,40 +291,61 @@ class DataPreprocessor(DataPreprocessorParent):
             pixel_id = numpy.stack([image_id, grid_x, grid_y], axis=2)
             pixel_id_list.append(pixel_id)
 
+            if self.ndc:
+                image_rays_o_ndc, image_rays_d_ndc = self.get_ndc_rays(image_rays_o, image_rays_d, resolution, intrinsics[i], near)
+                rays_o_ndc_list.append(image_rays_o_ndc)
+                rays_d_ndc_list.append(image_rays_d_ndc)
+
         rays_o = numpy.stack(rays_o_list, 0)  # [n, h, w, 3]
         rays_d = numpy.stack(rays_d_list, 0)  # [n, h, w, 3]
         view_dirs = self.get_view_dirs(rays_d)  # [n, h, w, 3]
         pixel_id = numpy.stack(pixel_id_list, 0)  # (n, h, w, 3)
-        if self.ndc:
-            rays_o_ndc, rays_d_ndc = self.get_ndc_rays(rays_o, rays_d, h, w, fx, fy, near)  # TODO: check if near=1
+
         rays_o = numpy.reshape(rays_o, (-1, 3)).astype(numpy.float32)  # (n*h*w, 3)
         rays_d = numpy.reshape(rays_d, (-1, 3)).astype(numpy.float32)  # (n*h*w, 3)
         view_dirs = numpy.reshape(view_dirs, (-1, 3)).astype(numpy.float32)  # (n*h*w, 3)
-        pixel_id = numpy.reshape(pixel_id, (-1, 3)).astype(numpy.float32)  # (n*h*w, 3)
+        pixel_id = numpy.reshape(pixel_id, (-1, 3)).astype(numpy.int32)  # (n*h*w, 3)
+        near_array = data_dict['nerf_data']['near'] * numpy.ones_like(rays_o[:, :1])
+        far_array = data_dict['nerf_data']['far'] * numpy.ones_like(rays_o[:, :1])
 
         all_data_dict = {
             'rays_o': torch.from_numpy(rays_o), 
             'rays_d': torch.from_numpy(rays_d),
             'view_dirs': torch.from_numpy(view_dirs),
             'pixel_id': torch.from_numpy(pixel_id),
+            'near_array': torch.from_numpy(near_array),
+            'far_array': torch.from_numpy(far_array),
         }
 
         if self.ndc:
+            rays_o_ndc = numpy.stack(rays_o_ndc_list, 0)  # (n, h, w, 3)
+            rays_d_ndc = numpy.stack(rays_d_ndc_list, 0)  # (n, h, w, 3)
             rays_o_ndc = numpy.reshape(rays_o_ndc, (-1, 3)).astype(numpy.float32)  # (n*h*w, 3)
             rays_d_ndc = numpy.reshape(rays_d_ndc, (-1, 3)).astype(numpy.float32)  # (n*h*w, 3)
+            near_ndc_array = data_dict['nerf_data']['near_ndc'] * numpy.ones_like(rays_o[:, :1])
+            far_ndc_array = data_dict['nerf_data']['far_ndc'] * numpy.ones_like(rays_o[:, :1])
             all_data_dict['rays_o_ndc'] = torch.from_numpy(rays_o_ndc)
             all_data_dict['rays_d_ndc'] = torch.from_numpy(rays_d_ndc)
+            all_data_dict['near_array_ndc'] = torch.from_numpy(near_ndc_array)
+            all_data_dict['far_array_ndc'] = torch.from_numpy(far_ndc_array)
 
         target_rgb = numpy.reshape(images, (-1, 3)).astype(numpy.float32)  # (n*h*w, 3)
         all_data_dict['target_rgb'] = torch.from_numpy(target_rgb)
         return all_data_dict
 
-    def get_rays(self, h, w, fx, fy, pose):
-        x, y = numpy.meshgrid(numpy.arange(w, dtype=numpy.float32), numpy.arange(h, dtype=numpy.float32), indexing='xy')  # x: h x w, y: h x w
-        if not self.mip_nerf_used:
-            dirs = numpy.stack([(x - w * 0.5) / fx, -(y - h * 0.5) / fy, -numpy.ones_like(x)], -1)  # dirs: h x w x 3
-        else:
-            dirs = numpy.stack([(x - w * 0.5 + 0.5) / fx, -(y - h * 0.5 + 0.5) / fy, -numpy.ones_like(x)], -1)  # dirs: h x w x 3
+    def get_rays(self, resolution, intrinsic, pose):
+        h, w = resolution
+        x, y = numpy.meshgrid(
+            numpy.arange(w, dtype=numpy.float32),
+            numpy.arange(h, dtype=numpy.float32),
+            indexing='xy')  # x: h x w, y: h x w
+        if self.mip_nerf_used:
+            x += 0.5
+            y += 0.5
+        ones = numpy.ones_like(x)
+        points_homo = numpy.stack([x, y, ones], axis=2)
+        dirs = (numpy.linalg.inv(intrinsic)[None, None] @ points_homo[:, :, :, None])[:, :, :, 0]  # (h, w, 3)
+        dirs[:, :, 1:] *= -1
         # Rotate ray directions from camera frame to the world frame
         rays_d = numpy.sum(dirs[..., numpy.newaxis, :] * pose[:3, :3], -1)  # dot product, equals to: [c2w.dot(dir) for dir in dirs]
         # Translate camera frame's origin to the world frame. It is the origin of all rays.
@@ -329,7 +353,9 @@ class DataPreprocessor(DataPreprocessorParent):
         return rays_o, rays_d
 
     @staticmethod
-    def get_ndc_rays(rays_o, rays_d, h, w, fx, fy, near):
+    def get_ndc_rays(rays_o, rays_d, resolution, intrinsic, near):
+        h, w = resolution
+        fx, fy = intrinsic[0, 0], intrinsic[1, 1]
         # Shift ray origins to near plane
         t = -(near + rays_o[..., 2]) / rays_d[..., 2]
         rays_o = rays_o + t[..., None] * rays_d
@@ -468,96 +494,38 @@ class DataPreprocessor(DataPreprocessorParent):
             return_dict = self.load_cached_next_batch(iter_num, image_num)
         else:
             return_dict = self.load_uncached_next_batch(iter_num, image_num)
-
-        # Load data that is independent of cached data
-        rays_o = return_dict['rays_o']
-        near = self.preprocessed_data_dict['nerf_data']['near']
-        far = self.preprocessed_data_dict['nerf_data']['far']
-        near = near * torch.ones_like(rays_o[..., :1])
-        far = far * torch.ones_like(rays_o[..., :1])
-        return_dict['near'] = near
-        return_dict['far'] = far
-        if self.ndc:
-            near_ndc = self.preprocessed_data_dict['nerf_data']['near_ndc']
-            far_ndc = self.preprocessed_data_dict['nerf_data']['far_ndc']
-            near_ndc = near_ndc * torch.ones_like(rays_o[..., :1])
-            far_ndc = far_ndc * torch.ones_like(rays_o[..., :1])
-            return_dict['near_ndc'] = near_ndc
-            return_dict['far_ndc'] = far_ndc
-
         return return_dict
     
     def load_cached_next_batch(self, iter_num, image_num):
         return_dict = {}
+        return_dict['common_data'] = {}
+
         indices_dict = self.select_batch_indices(iter_num, image_num)
         return_dict.update(indices_dict)
-        indices = indices_dict['indices']
         
-        nerf_data_dict = self.load_nerf_cached_batch(iter_num, indices)
+        nerf_data_dict = self.load_nerf_cached_batch(iter_num, indices_dict)
         return_dict.update(nerf_data_dict)
 
         if self.mip_nerf_used:
-            mip_nerf_depth_data_dict = self.load_mip_nerf_cached_batch(indices)
+            mip_nerf_depth_data_dict = self.load_mip_nerf_cached_batch(indices_dict, return_dict)
             return_dict.update(mip_nerf_depth_data_dict)
 
-        if self.sparse_depth_needed and self.mode == 'train':
-            sparse_depth_data_dict = self.load_sparse_depth_cached_batch(indices)
+        if self.sparse_depth_needed and (self.mode == 'train'):
+            sparse_depth_data_dict = self.load_sparse_depth_cached_batch(indices_dict, return_dict)
             return_dict.update(sparse_depth_data_dict)
 
-        if self.dense_depth_needed and self.mode == 'train':
-            dense_depth_data_dict = self.load_dense_depth_cached_batch(indices)
+        if self.dense_depth_needed and (self.mode == 'train'):
+            dense_depth_data_dict = self.load_dense_depth_cached_batch(indices_dict, return_dict)
             return_dict.update(dense_depth_data_dict)
 
-        if self.visibility_prior_needed and self.mode == 'train':
-            visibility_prior_data_dict = self.load_visibility_prior_cached_batch(indices)
+        if self.visibility_prior_needed and (self.mode == 'train'):
+            visibility_prior_data_dict = self.load_visibility_prior_cached_batch(indices_dict, return_dict)
             return_dict.update(visibility_prior_data_dict)
-        return return_dict
 
-    def load_uncached_next_batch(self, iter_num, image_num):
-        """
-        Random from one image.
-        This function is not maintained well, since it is not in use.
-        """
-        images = self.preprocessed_data_dict['images']
-        poses = self.preprocessed_data_dict['poses']
-        h, w = self.preprocessed_data_dict['resolution']
-        fx, fy = self.preprocessed_data_dict['focal_length']
-        near = self.preprocessed_data_dict['near']
-
-        if image_num is None:
-            img_i = numpy.random.randint(0, images.shape[0])
-        else:
-            img_i = image_num
-        target = images[img_i]
-        pose = poses[img_i, :3, :4]
-
-        rays_o, rays_d = self.get_rays(h, w, fx, fy, pose)  # (H, W, 3), (H, W, 3)
-        # TODO: Compute radii also
-
-        coords = torch.stack(torch.meshgrid(torch.linspace(0, h - 1, h), torch.linspace(0, w - 1, w)), -1)  # (H, W, 2)
-        coords = torch.reshape(coords, [-1, 2])  # (H * W, 2)
-        if image_num is None:
-            select_inds = numpy.random.choice(rays_o.shape[0], size=[self.num_rays], replace=False)  # (N_rand,)
-            select_coords = coords[select_inds].long()  # (N_rand, 2)
-        else:
-            select_coords = coords
-
-        rays_o = rays_o[select_coords[:, 0], select_coords[:, 1]]  # (N_rand, 3)
-        rays_d = rays_d[select_coords[:, 0], select_coords[:, 1]]  # (N_rand, 3)
-        target_rgb = target[select_coords[:, 0], select_coords[:, 1]]  # (N_rand, 3)
-
-        if self.ndc:
-            rays_o_ndc, rays_d_ndc = self.get_ndc_rays(rays_o, rays_d, h, w, fx, fy, near)
-
-        return_dict = {
-            'rays_o': torch.from_numpy(rays_o),
-            'rays_d': torch.from_numpy(rays_d),
-            'target_rgb': target_rgb,
-            'iter_num': iter_num,
-        }
-        if self.ndc:
-            return_dict['rays_o_ndc'] = torch.from_numpy(rays_o_ndc)
-            return_dict['rays_d_ndc'] = torch.from_numpy(rays_d_ndc)
+        # Copy common data num_gpus times so that it will be available to all GPUs
+        for key in return_dict['common_data'].keys():
+            ones_shape = [1] * return_dict['common_data'][key].ndim
+            return_dict['common_data'][key] = return_dict['common_data'][key][None].repeat([2, *ones_shape])
         return return_dict
 
     def select_batch_indices(self, iter_num, image_num):
@@ -573,7 +541,8 @@ class DataPreprocessor(DataPreprocessorParent):
                 self.i_batch = 0
         else:
             h, w = self.preprocessed_data_dict['nerf_data']['resolution']
-            indices = numpy.arange(h * w) + (image_num * h * w)
+            image_index = numpy.where(self.preprocessed_data_dict['frame_nums'] == image_num)[0].item()
+            indices = numpy.arange(h * w) + (image_index * h * w)
         indices_id = numpy.ones_like(indices)  # To identify which part added the indices
 
         if self.sparse_depth_needed and (self.mode == 'train') and (image_num is None):
@@ -586,115 +555,227 @@ class DataPreprocessor(DataPreprocessorParent):
             indices = numpy.concatenate([indices, indices_sd])
             indices_id = numpy.concatenate([indices_id, indices_id_sd])
 
-        return_dict['indices'] = indices
+        # indices are not moved to gpu in cached data since numpy shuffle is applied on the indices after every epoch
+        return_dict['indices'] = torch.from_numpy(indices).to(self.device)
+        return_dict['indices_mask_nerf'] = torch.from_numpy(indices_id == 1).to(self.device)
         if self.sparse_depth_needed and (self.mode == 'train') and (image_num is None):
-            return_dict['indices_mask_sparse_depth'] = indices_id == 2
+            return_dict['indices_mask_sparse_depth'] = torch.from_numpy(indices_id == 2).to(self.device)
         return return_dict
 
-    def load_nerf_cached_batch(self, iter_num, indices):
+    def load_nerf_cached_batch(self, iter_num, indices_dict):
         num_frames = self.preprocessed_data_dict['frame_nums'].size
-        rays_o = self.preprocessed_data_dict['nerf_data']['rays_o'][indices]
-        rays_d = self.preprocessed_data_dict['nerf_data']['rays_d'][indices]
-        view_dirs = self.preprocessed_data_dict['nerf_data']['view_dirs'][indices]
-        pixel_id = self.preprocessed_data_dict['nerf_data']['pixel_id'][indices]
-        target_rgb = self.preprocessed_data_dict['nerf_data']['target_rgb'][indices]
+        indices = indices_dict['indices']
+        indices_nerf_mask = indices_dict['indices_mask_nerf']
+        indices_nerf = indices[indices_nerf_mask]
+
+        # Initialize values to -1. Will be filled later in respective functions
+        rays_o = -1 * torch.ones((indices.shape[0], 3)).to(self.device)
+        rays_d = -1 * torch.ones((indices.shape[0], 3)).to(self.device)
+        view_dirs = -1 * torch.ones((indices.shape[0], 3)).to(self.device)
+        pixel_id = -1 * torch.ones((indices.shape[0], 3), dtype=torch.int32).to(self.device)
+        target_rgb = -1 * torch.ones((indices.shape[0], 3)).to(self.device)
+        near = -1 * torch.ones((indices.shape[0], 1)).to(self.device)
+        far = -1 * torch.ones((indices.shape[0], 1)).to(self.device)
+
+        rays_o[indices_nerf_mask] = self.preprocessed_data_dict['nerf_data']['rays_o'][indices_nerf]
+        rays_d[indices_nerf_mask] = self.preprocessed_data_dict['nerf_data']['rays_d'][indices_nerf]
+        view_dirs[indices_nerf_mask] = self.preprocessed_data_dict['nerf_data']['view_dirs'][indices_nerf]
+        pixel_id[indices_nerf_mask] = self.preprocessed_data_dict['nerf_data']['pixel_id'][indices_nerf]
+        target_rgb[indices_nerf_mask] = self.preprocessed_data_dict['nerf_data']['target_rgb'][indices_nerf]
+        near[indices_nerf_mask] = self.preprocessed_data_dict['nerf_data']['near_array'][indices_nerf]
+        far[indices_nerf_mask] = self.preprocessed_data_dict['nerf_data']['far_array'][indices_nerf]
 
         return_dict = {
+            'iter_num': iter_num,
+            'num_frames': num_frames,
             'rays_o': rays_o,
             'rays_d': rays_d,
             'view_dirs': view_dirs,
             'pixel_id': pixel_id,
             'target_rgb': target_rgb,
-            'iter_num': iter_num,
-            'num_frames': num_frames,
+            'near': near,
+            'far': far,
         }
 
         if self.ndc:
-            rays_o_ndc = self.preprocessed_data_dict['nerf_data']['rays_o_ndc'][indices]
-            rays_d_ndc = self.preprocessed_data_dict['nerf_data']['rays_d_ndc'][indices]
+            # Initialize values to -1. Will be filled later in respective functions
+            rays_o_ndc = -1 * torch.ones((indices.shape[0], 3)).to(self.device)
+            rays_d_ndc = -1 * torch.ones((indices.shape[0], 3)).to(self.device)
+            near_ndc = -1 * torch.ones((indices.shape[0], 1)).to(self.device)
+            far_ndc = -1 * torch.ones((indices.shape[0], 1)).to(self.device)
+            rays_o_ndc[indices_nerf_mask] = self.preprocessed_data_dict['nerf_data']['rays_o_ndc'][indices_nerf]
+            rays_d_ndc[indices_nerf_mask] = self.preprocessed_data_dict['nerf_data']['rays_d_ndc'][indices_nerf]
+            near_ndc[indices_nerf_mask] = self.preprocessed_data_dict['nerf_data']['near_array_ndc'][indices_nerf]
+            far_ndc[indices_nerf_mask] = self.preprocessed_data_dict['nerf_data']['far_array_ndc'][indices_nerf]
             return_dict['rays_o_ndc'] = rays_o_ndc
             return_dict['rays_d_ndc'] = rays_d_ndc
+            return_dict['near_ndc'] = near_ndc
+            return_dict['far_ndc'] = far_ndc
         return return_dict
 
-    def load_mip_nerf_cached_batch(self, indices):
+    def load_mip_nerf_cached_batch(self, indices_dict, batch_dict):
         return_dict = {}
 
-        radii = self.preprocessed_data_dict['nerf_data']['radii'][indices]
+        indices = indices_dict['indices']
+        indices_nerf_mask = indices_dict['indices_mask_nerf']
+        indices_nerf = indices[indices_nerf_mask]
+
+        # Initialize values to -1. Will be filled later in respective functions
+        radii = -1 * torch.ones((indices.shape[0], 1)).to(self.device)
+        radii[indices_nerf_mask] = self.preprocessed_data_dict['nerf_data']['radii'][indices_nerf]
         return_dict['radii'] = radii
 
         if self.ndc:
-            radii_ndc = self.preprocessed_data_dict['nerf_data']['radii_ndc'][indices]
+            radii_ndc = -1 * torch.ones((indices.shape[0], 1)).to(self.device)
+            radii_ndc[indices_nerf_mask] = self.preprocessed_data_dict['nerf_data']['radii_ndc'][indices_nerf]
             return_dict['radii_ndc'] = radii_ndc
         return return_dict
 
-    def load_sparse_depth_cached_batch(self, indices):
+    def load_sparse_depth_cached_batch(self, indices_dict, batch_dict):
         return_dict = {}
-        sparse_depths = self.preprocessed_data_dict['sparse_depth_data']['depths'][indices]
-        reproj_errors = self.preprocessed_data_dict['sparse_depth_data']['reprojection_errors'][indices]
+
+        if 'indices_mask_sparse_depth' not in indices_dict:
+            return return_dict
+
+        indices = indices_dict['indices']
+        indices_sd_mask = indices_dict['indices_mask_sparse_depth']
+        indices_sd = indices[indices_sd_mask]
+
+        return_dict['rays_o'] = batch_dict['rays_o']
+        return_dict['rays_d'] = batch_dict['rays_d']
+        return_dict['view_dirs'] = batch_dict['view_dirs']
+        return_dict['pixel_id'] = batch_dict['pixel_id']
+        return_dict['near'] = batch_dict['near']
+        return_dict['far'] = batch_dict['far']
+
+        # fill in values that were earlier initialized to -1
+        return_dict['rays_o'][indices_sd_mask] = self.preprocessed_data_dict['nerf_data']['rays_o'][indices_sd]
+        return_dict['rays_d'][indices_sd_mask] = self.preprocessed_data_dict['nerf_data']['rays_d'][indices_sd]
+        return_dict['view_dirs'][indices_sd_mask] = self.preprocessed_data_dict['nerf_data']['view_dirs'][indices_sd]
+        return_dict['pixel_id'][indices_sd_mask] = self.preprocessed_data_dict['nerf_data']['pixel_id'][indices_sd]
+        return_dict['near'][indices_sd_mask] = self.preprocessed_data_dict['nerf_data']['near_array'][indices_sd]
+        return_dict['far'][indices_sd_mask] = self.preprocessed_data_dict['nerf_data']['far_array'][indices_sd]
+
+        # Initialize values to -1. Will be filled later in respective functions
+        sparse_depths = -1 * torch.ones((indices.shape[0], 1)).to(self.device)
+        reproj_errors = -1 * torch.ones((indices.shape[0], 1)).to(self.device)
+        sparse_depths[indices_sd_mask] = self.preprocessed_data_dict['sparse_depth_data']['depths'][indices_sd]
+        reproj_errors[indices_sd_mask] = self.preprocessed_data_dict['sparse_depth_data']['reprojection_errors'][indices_sd]
         return_dict['sparse_depth_values'] = sparse_depths
         return_dict['sparse_depth_errors'] = reproj_errors
+
         if self.ndc:
-            sparse_depths_ndc = self.preprocessed_data_dict['sparse_depth_data']['depths_ndc'][indices]
+            return_dict['rays_o_ndc'] = batch_dict['rays_o_ndc']
+            return_dict['rays_d_ndc'] = batch_dict['rays_d_ndc']
+            return_dict['near_ndc'] = batch_dict['near_ndc']
+            return_dict['far_ndc'] = batch_dict['far_ndc']
+            return_dict['rays_o_ndc'][indices_sd_mask] = self.preprocessed_data_dict['nerf_data']['rays_o_ndc'][indices_sd]
+            return_dict['rays_d_ndc'][indices_sd_mask] = self.preprocessed_data_dict['nerf_data']['rays_d_ndc'][indices_sd]
+            return_dict['near_ndc'][indices_sd_mask] = self.preprocessed_data_dict['nerf_data']['near_array_ndc'][indices_sd]
+            return_dict['far_ndc'][indices_sd_mask] = self.preprocessed_data_dict['nerf_data']['far_array_ndc'][indices_sd]
+
+            sparse_depths_ndc = -1 * torch.ones((indices.shape[0], 1)).to(self.device)
+            sparse_depths_ndc[indices_sd_mask] = self.preprocessed_data_dict['sparse_depth_data']['depths_ndc'][indices_sd]
             return_dict['sparse_depth_values_ndc'] = sparse_depths_ndc
         return return_dict
 
-    def load_dense_depth_cached_batch(self, indices):
+    def load_dense_depth_cached_batch(self, indices_dict, batch_dict):
         return_dict = {}
-        dense_depths = self.preprocessed_data_dict['dense_depth_data']['depth_values'][indices]
-        dense_depth_weights = self.preprocessed_data_dict['dense_depth_data']['depth_weights'][indices]
+
+        indices = indices_dict['indices']
+        indices_nerf_mask = indices_dict['indices_mask_nerf']
+        indices_nerf = indices[indices_nerf_mask]
+
+        dense_depths = -1 * torch.ones((indices.shape[0], 1)).to(self.device)
+        dense_depth_weights = -1 * torch.ones((indices.shape[0], 1)).to(self.device)
+        dense_depths[indices_nerf_mask] = self.preprocessed_data_dict['dense_depth_data']['depth_values'][indices_nerf]
+        dense_depth_weights[indices_nerf_mask] = self.preprocessed_data_dict['dense_depth_data']['depth_weights'][indices_nerf]
         return_dict['dense_depth_values'] = dense_depths
         return_dict['dense_depth_weights'] = dense_depth_weights
         if self.ndc:
-            dense_depths_ndc = self.preprocessed_data_dict['dense_depth_data']['depth_values_ndc'][indices]
+            dense_depths_ndc = -1 * torch.ones((indices.shape[0], 1)).to(self.device)
+            dense_depths_ndc[indices_nerf_mask] = self.preprocessed_data_dict['dense_depth_data']['depth_values_ndc'][indices_nerf]
             return_dict['dense_depth_values_ndc'] = dense_depths_ndc
         return return_dict
 
-    def load_visibility_prior_cached_batch(self, indices):
+    def load_visibility_prior_cached_batch(self, indices_dict, batch_dict):
         return_dict = {}
+        return_dict['common_data'] = batch_dict['common_data']
 
-        h, w = self.preprocessed_data_dict['nerf_data']['resolution']
-        fx, fy = self.preprocessed_data_dict['nerf_data']['focal_length']
-        if self.mip_nerf_used:
-            radii_images = self.preprocessed_data_dict['nerf_data']['radii'].reshape((-1, h, w))
-            if self.ndc:
-                radii_ndc_images = self.preprocessed_data_dict['nerf_data']['radii_ndc'].reshape((-1, h, w))
+        indices = indices_dict['indices']
+        indices_nerf_mask = indices_dict['indices_mask_nerf']
+        indices_nerf = indices[indices_nerf_mask]
 
-        h = h * torch.ones((indices.shape[0], 1), dtype=torch.float32).to(self.device)
-        w = w * torch.ones((indices.shape[0], 1), dtype=torch.float32).to(self.device)
-        fx = fx * torch.ones((indices.shape[0], 1), dtype=torch.float32).to(self.device)
-        fy = fy * torch.ones((indices.shape[0], 1), dtype=torch.float32).to(self.device)
         poses = torch.from_numpy(self.preprocessed_data_dict['nerf_data']['poses']).to(self.device)
-
-        if self.mip_nerf_used:
-            return_dict['radii_images'] = radii_images
-            if self.ndc:
-                return_dict['radii_ndc_images'] = radii_ndc_images
-        return_dict['height'] = h
-        return_dict['width'] = w
-        return_dict['focal_length_x'] = fx
-        return_dict['focal_length_y'] = fy
-        return_dict['poses'] = poses
+        return_dict['common_data']['poses'] = poses
 
         if self.configs['data_loader']['visibility_prior']['load_masks']:
-            vc_masks = self.preprocessed_data_dict['visibility_prior_data']['masks'][indices]
-            vc_mask_images = self.preprocessed_data_dict['visibility_prior_data']['mask_images']
+            num_frames = self.preprocessed_data_dict['frame_nums'].size
+            vc_masks = -1 * torch.ones((indices.shape[0], num_frames-1)).to(self.device)
+            vc_masks[indices_nerf_mask] = self.preprocessed_data_dict['visibility_prior_data']['masks'][indices_nerf]
             return_dict['visibility_prior_masks'] = vc_masks
-            return_dict['visibility_prior_mask_images'] = vc_mask_images  # (n, n-1, h, w)
 
         if self.configs['data_loader']['visibility_prior']['load_weights']:
-            vc_weights = self.preprocessed_data_dict['visibility_prior_data']['weights'][indices]
-            vc_weight_images = self.preprocessed_data_dict['visibility_prior_data']['weight_images']
+            vc_weights = -1 * torch.ones((indices.shape[0], 1)).to(self.device)
+            vc_weights[indices_nerf_mask] = self.preprocessed_data_dict['visibility_prior_data']['weights'][indices_nerf]
             return_dict['visibility_prior_weights'] = vc_weights
-            return_dict['visibility_prior_weight_images'] = vc_weight_images  # (n, n-1, h, w)
 
+        return return_dict
+
+    def load_uncached_next_batch(self, iter_num, image_num):
+        """
+        Random from one image.
+        This function is not maintained well, since it is not in use.
+        """
+        images = self.preprocessed_data_dict['images']
+        poses = self.preprocessed_data_dict['poses']
+        resolution = self.preprocessed_data_dict['resolution']
+        intrinsics = self.preprocessed_data_dict['intrinsics']
+        near = self.preprocessed_data_dict['near']
+        h, w = resolution
+
+        if image_num is None:
+            img_i = numpy.random.randint(0, images.shape[0])
+        else:
+            img_i = image_num
+        target = images[img_i]
+        pose = poses[img_i, :3, :4]
+
+        rays_o, rays_d = self.get_rays(resolution, intrinsics[img_i], poses[img_i])  # (H, W, 3), (H, W, 3)
+        # TODO: Compute radii also
+
+        coords = torch.stack(torch.meshgrid(torch.linspace(0, h - 1, h), torch.linspace(0, w - 1, w)), -1)  # (H, W, 2)
+        coords = torch.reshape(coords, [-1, 2])  # (H * W, 2)
+        if image_num is None:
+            select_inds = numpy.random.choice(rays_o.shape[0], size=[self.num_rays], replace=False)  # (N_rand,)
+            select_coords = coords[select_inds].long()  # (N_rand, 2)
+        else:
+            select_coords = coords
+
+        rays_o = rays_o[select_coords[:, 0], select_coords[:, 1]]  # (N_rand, 3)
+        rays_d = rays_d[select_coords[:, 0], select_coords[:, 1]]  # (N_rand, 3)
+        target_rgb = target[select_coords[:, 0], select_coords[:, 1]]  # (N_rand, 3)
+
+        if self.ndc:
+            rays_o_ndc, rays_d_ndc = self.get_ndc_rays(rays_o, rays_d, resolution, intrinsics[img_i], near)
+
+        return_dict = {
+            'rays_o': torch.from_numpy(rays_o),
+            'rays_d': torch.from_numpy(rays_d),
+            'target_rgb': target_rgb,
+            'iter_num': iter_num,
+        }
+        if self.ndc:
+            return_dict['rays_o_ndc'] = torch.from_numpy(rays_o_ndc)
+            return_dict['rays_d_ndc'] = torch.from_numpy(rays_d_ndc)
         return return_dict
 
     # --------------------------------- Inference methods ----------------------------------- #
 
     def create_test_data(self, pose: numpy.ndarray, view_pose: Optional[numpy.ndarray] = None,
                          secondary_poses: Optional[List[numpy.ndarray]] = None, preprocess_pose: bool = True,
-                         frame: Optional[numpy.ndarray] = None, secondary_frames: Optional[List[numpy.ndarray]] = None,
-                         intrinsic: Optional[numpy.ndarray] = None, secondary_intrinsics: Optional[List[numpy.ndarray]] = None):
+                         intrinsic: Optional[numpy.ndarray] = None, view_intrinsic: Optional[numpy.ndarray] = None,
+                         secondary_intrinsics: Optional[List[numpy.ndarray]] = None):
         # Create a copy of poses so that any preprocessing does not affect the poses in parent files.
         pose = pose.copy()
         if view_pose is not None:
@@ -711,9 +792,11 @@ class DataPreprocessor(DataPreprocessorParent):
                 train_mode=False)['poses'][0]
         else:
             processed_pose = pose.astype('float32')
-        h, w = self.model_configs['resolution']
-        fx, fy = self.model_configs['focal_length']
-        rays_o, rays_d = self.get_rays(h, w, fx, fy, processed_pose)
+        resolution = self.model_configs['resolution']
+        if intrinsic is None:
+            intrinsic = numpy.array(self.model_configs['intrinsic'])
+        intrinsic = intrinsic.astype('float32')
+        rays_o, rays_d = self.get_rays(resolution, intrinsic, processed_pose)
         if view_pose is not None:
             processed_view_pose = self.preprocess_poses({
                 'poses': view_pose[None],
@@ -721,7 +804,10 @@ class DataPreprocessor(DataPreprocessorParent):
                 'average_pose': numpy.array(self.model_configs['average_pose']),
             },
                 train_mode=False)['poses'][0]
-            _, view_rays_d = self.get_rays(h, w, fx, fy, processed_view_pose)
+            if view_intrinsic is None:
+                view_intrinsic = numpy.array(self.model_configs['intrinsic'])
+            view_intrinsic = view_intrinsic.astype('float32')
+            _, view_rays_d = self.get_rays(resolution, view_intrinsic, processed_view_pose)
             view_dirs = self.get_view_dirs(view_rays_d)
         else:
             view_dirs = self.get_view_dirs(rays_d)
@@ -740,7 +826,7 @@ class DataPreprocessor(DataPreprocessorParent):
 
         if self.ndc:
             near = self.model_configs['near']
-            rays_o_ndc, rays_d_ndc = self.get_ndc_rays(rays_o, rays_d, h, w, fx, fy, near)
+            rays_o_ndc, rays_d_ndc = self.get_ndc_rays(rays_o, rays_d, resolution, intrinsic, near)
             input_batch['rays_o_ndc'] = torch.from_numpy(rays_o_ndc).reshape(-1, 3)
             input_batch['rays_d_ndc'] = torch.from_numpy(rays_d_ndc).reshape(-1, 3)
 
@@ -757,9 +843,14 @@ class DataPreprocessor(DataPreprocessorParent):
                 'average_pose': numpy.array(self.model_configs['average_pose']),
             },
                 train_mode=False)['poses']
+            if secondary_intrinsics is None:
+                secondary_intrinsics = [numpy.array(self.model_configs['intrinsic']) for _ in secondary_poses]
+            secondary_intrinsics = [int_mat.astype('float32') for int_mat in secondary_intrinsics]
             processed_sec_poses = [proc_sec_pose for proc_sec_pose in processed_sec_poses]
-            rays_o2_list = [numpy.array(self.get_rays(h, w, fx, fy, sec_pose)[0]) for sec_pose in processed_sec_poses]
-            input_batch['rays_o2_list'] = [torch.from_numpy(rays_o2).reshape(-1, 3) for rays_o2 in rays_o2_list]
+            rays_o2 = [numpy.array(self.get_rays(resolution, sec_intrinsic, sec_pose)[0]).reshape(-1, 3)
+                       for sec_pose, sec_intrinsic in zip(processed_sec_poses, secondary_intrinsics)]
+            rays_o2 = numpy.stack(rays_o2, axis=1)  # (nr, nf-1, 3)
+            input_batch['rays_o2'] = torch.from_numpy(rays_o2)  # (nr, nf-1, 3)
 
         if self.mip_nerf_used:
             radii = self.get_radii(rays_d[None])[0]
@@ -774,15 +865,12 @@ class DataPreprocessor(DataPreprocessorParent):
     def retrieve_inference_outputs(self, network_outputs: dict):
         h, w = self.model_configs['resolution']
         processed_outputs = self.post_process_output(network_outputs)
-        suffix = ''
-        if ('use_fine_mlp' in self.configs['model']) and (self.configs['model']['use_fine_mlp']):
+        if 'fine_mlp' in self.configs['model']:
             suffix = '_fine'
-        elif ('num_samples_fine' in self.configs['model']) and (self.configs['model']['num_samples_fine'] > 0):
-            suffix = '_fine'
-        elif self.configs['model']['use_coarse_mlp']:
+        elif 'coarse_mlp' in self.configs['model']:
             suffix = '_coarse'
-        elif ('num_samples_coarse' in self.configs['model']) and (self.configs['model']['num_samples_coarse'] > 0):
-            suffix = '_coarse'
+        else:
+            raise RuntimeError
         image = self.post_process_image(processed_outputs[f'rgb{suffix}'].reshape(h, w, 3))
         depth = self.post_process_depth(processed_outputs[f'depth{suffix}'].reshape(h, w))
         depth_var = self.post_process_depth(processed_outputs[f'depth_var{suffix}'].reshape(h, w))
@@ -797,7 +885,10 @@ class DataPreprocessor(DataPreprocessorParent):
             return_dict['depth_ndc'] = depth_ndc
             return_dict['depth_var_ndc'] = depth_var_ndc
         if f'visibility2{suffix}' in processed_outputs:
-            visibility2 = [self.post_process_visibility(vis2.reshape(h, w)) for vis2 in processed_outputs[f'visibility2{suffix}']]
+            visibility2_flat = processed_outputs[f'visibility2{suffix}']  # (h * w, nf-1)
+            visibility2 = visibility2_flat.reshape((h, w, -1))  # (h, w, nf-1)
+            visibility2 = visibility2.transpose([2, 0, 1])  # (nf-1, h, w)
+            visibility2 = self.post_process_visibility(visibility2)
             return_dict['visibility2'] = visibility2
         return return_dict
 
@@ -849,8 +940,7 @@ class DataPreprocessor(DataPreprocessorParent):
             poses, render_poses, bds = self.spherify_poses(poses, return_dict['bounds'])
             return_dict['bounds'] = bds
 
-        poses = poses[:, :3].astype(numpy.float32)
-        return_dict['poses'] = poses
+        return_dict['poses'] = poses.astype(numpy.float32)
         return return_dict
 
     @staticmethod

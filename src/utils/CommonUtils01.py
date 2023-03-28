@@ -14,19 +14,17 @@ this_filepath = Path(__file__)
 this_filename = this_filepath.stem
 
 
-def get_device(device: str):
+def get_device(device):
     """
     Returns torch device object
-    :param device: cpu/gpu0/gpu1
+    :param device: None//0/[0,],[0,1]. If multiple gpus are specified, first one is chosen
     :return:
     """
-    if device == 'cpu':
+    if (device is None) or (device == '') or (not torch.cuda.is_available()):
         device = torch.device('cpu')
-    elif device.startswith('gpu') and torch.cuda.is_available():
-        gpu_num = int(device[3:])
-        device = torch.device(f'cuda:{gpu_num}')
     else:
-        device = torch.device('cpu')
+        device0 = device[0] if isinstance(device, list) else device
+        device = torch.device(f'cuda:{device0}')
     return device
 
 

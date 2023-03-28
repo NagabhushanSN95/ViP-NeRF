@@ -1,8 +1,7 @@
 # Shree KRISHNAYa Namaha
-# Loads RealEstate Data for NeRF, Colmap sparse depth, dense depth, visibility prior.
-# Extended from RealEstateDataLoader25.py. Code cleaned for release.
+# Loads RealEstate Data for NeRF, Colmap sparse depth, dense depth, visibility prior from RealEstate-10K dataset.
 # Author: Nagabhushan S N
-# Last Modified: 30/12/2022
+# Last Modified: 28/03/2023
 
 from pathlib import Path
 from typing import Optional
@@ -67,22 +66,18 @@ class RealEstateDataLoader(DataLoaderParent):
 
         extrinsics_path = self.data_dirpath / f'test/DatabaseData/{self.scene_num:05}/CameraExtrinsics.csv'
         extrinsic_matrices = numpy.loadtxt(extrinsics_path.as_posix(), delimiter=',').reshape((-1, 4, 4))
-        poses = extrinsic_matrices[frame_nums]
+        extrinsics = extrinsic_matrices[frame_nums]
 
         intrinsics_path = self.data_dirpath / f'test/DatabaseData/{self.scene_num:05}/CameraIntrinsics.csv'
         intrinsic_matrices = numpy.loadtxt(intrinsics_path.as_posix(), delimiter=',').reshape((-1, 3, 3))
         intrinsics = intrinsic_matrices[frame_nums]
-        # assert all intrinsics are equal
-        for intrinsic in intrinsics:
-            assert numpy.allclose(intrinsics[0], intrinsic)
 
-        fx, fy = intrinsics[0][0, 0], intrinsics[0][1, 1]
         h, w = images.shape[1:3]
         return_dict = {
             'images': images,
-            'poses': poses,
+            'extrinsics': extrinsics,
+            'intrinsics': intrinsics,
             'resolution': (h, w),
-            'focal_length': (fx, fy),
             'bounds': bounds,
         }
         return return_dict

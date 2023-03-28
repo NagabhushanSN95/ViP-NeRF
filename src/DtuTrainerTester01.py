@@ -1,5 +1,5 @@
 # Shree KRISHNAya Namaha
-# Runs both training and testing on NeRF-LLFF dataset.
+# Runs both training and testing on DTU dataset.
 # Author: Nagabhushan S N
 # Last Modified: 30/12/2022
 
@@ -46,16 +46,16 @@ def start_training(train_configs: dict):
     # Setup output dirpath
     output_dirpath = root_dirpath / f'Runs/Training/Train{train_configs["train_num"]:04}'
     output_dirpath.mkdir(parents=True, exist_ok=True)
-    scene_names = train_configs['data_loader'].get('scene_names', None)
+    scene_nums = train_configs['data_loader'].get('scene_nums', None)
     Trainer.save_configs(output_dirpath, train_configs)
-    train_configs['data_loader']['scene_names'] = scene_names
+    train_configs['data_loader']['scene_nums'] = scene_nums
 
-    if train_configs['data_loader']['scene_names'] is None:
+    if train_configs['data_loader']['scene_nums'] is None:
         set_num = train_configs['data_loader']['train_set_num']
         video_datapath = database_dirpath / f'TrainTestSets/Set{set_num:02}/TrainVideosData.csv'
         video_data = pandas.read_csv(video_datapath)
-        scene_names = video_data['scene_name'].to_numpy()
-    scene_ids = numpy.unique(scene_names)
+        scene_nums = numpy.unique(video_data['scene_num'].to_numpy())
+    scene_ids = [f'{scene_num:05}' for scene_num in scene_nums]
     train_configs['data_loader']['scene_ids'] = scene_ids
     Trainer.start_training(train_configs)
     return
@@ -75,11 +75,11 @@ def start_testing(test_configs: dict):
     test_video_datapath = database_dirpath / f'TrainTestSets/Set{set_num:02}/TestVideosData.csv'
     train_video_data = pandas.read_csv(train_video_datapath)
     test_video_data = pandas.read_csv(test_video_datapath)
-    scene_names = test_configs.get('scene_names', test_video_data['scene_name'].to_numpy())
-    scene_names = numpy.unique(scene_names)
+    scene_nums = test_configs.get('scene_nums', test_video_data['scene_num'].to_numpy())
+    scene_nums = numpy.unique(scene_nums)
     scenes_data = {}
-    for scene_name in scene_names:
-        scene_id = scene_name
+    for scene_num in scene_nums:
+        scene_id = f'{scene_num:05}'
         scenes_data[scene_id] = {
             'output_dirname': scene_id,
             'frames_data': {}
@@ -88,13 +88,13 @@ def start_testing(test_configs: dict):
         extrinsics_path = database_dirpath / f'all/DatabaseData/{scene_id}/CameraExtrinsics.csv'
         extrinsics = numpy.loadtxt(extrinsics_path.as_posix(), delimiter=',').reshape((-1, 4, 4))
         # Intrinsics and frames required to compute plane sweep volume for conv visibility prediction
-        intrinsics_path = database_dirpath / f'all/DatabaseData/{scene_id}/CameraIntrinsics{test_configs["resolution_suffix"]}.csv'
+        intrinsics_path = database_dirpath / f'all/DatabaseData/{scene_id}/CameraIntrinsics.csv'
         intrinsics = numpy.loadtxt(intrinsics_path.as_posix(), delimiter=',').reshape((-1, 3, 3))
-        frames_dirpath = database_dirpath / f'all/DatabaseData/{scene_id}/rgb{test_configs["resolution_suffix"]}'
+        frames_dirpath = database_dirpath / f'all/DatabaseData/{scene_id}/rgb'
 
-        test_frame_nums = test_video_data.loc[test_video_data['scene_name'] == scene_name]['pred_frame_num'].to_list()
-        train_frame_nums = train_video_data.loc[train_video_data['scene_name'] == scene_name]['pred_frame_num'].to_list()
-        frame_nums = numpy.unique(sorted([test_frame_nums + train_frame_nums]))
+        test_frame_nums = test_video_data.loc[test_video_data['scene_num'] == scene_num]['pred_frame_num'].to_list()
+        train_frame_nums = train_video_data.loc[train_video_data['scene_num'] == scene_num]['pred_frame_num'].to_list()
+        frame_nums = numpy.unique(sorted(test_frame_nums + train_frame_nums))
         for frame_num in frame_nums:
             frame_path = frames_dirpath / f'{frame_num:04}.png'
             frame = read_image(frame_path)
@@ -107,14 +107,13 @@ def start_testing(test_configs: dict):
     Tester.start_testing(test_configs, scenes_data, save_depth=True, save_depth_var=True, save_visibility=True)
 
     # Run QA
-    qa_filepath = Path('./QA/00_Common/src/AllMetrics02_NeRF_LLFF.py')
+    qa_filepath = Path('./QA/00_Common/src/AllMetrics05_DTU.py')
     cmd = f'python {qa_filepath.absolute().as_posix()} ' \
           f'--demo_function_name demo2 ' \
           f'--pred_videos_dirpath {output_dirpath.absolute().as_posix()} ' \
           f'--database_dirpath {database_dirpath.absolute().as_posix()} ' \
           f'--frames_datapath {test_video_datapath.absolute().as_posix()} ' \
-          f'--pred_folder_name PredictedFrames ' \
-          f'--resolution_suffix _down4 '
+          f'--pred_folder_name PredictedFrames'
     os.system(cmd)
     return
 
@@ -131,8 +130,8 @@ def start_testing_videos(test_configs: dict):
     set_num = test_configs['test_set_num']
     video_datapath = database_dirpath / f'TrainTestSets/Set{set_num:02}/TestVideosData.csv'
     video_data = pandas.read_csv(video_datapath)
-    scene_names = test_configs.get('scene_names', video_data['scene_name'].to_numpy())
-    scene_names = numpy.unique(scene_names)
+    scene_nums = test_configs.get('scene_nums', video_data['scene_num'].to_numpy())
+    scene_nums = numpy.unique(scene_nums)
 
     videos_data = [1, 2, 3, ]
     for video_num in videos_data:
@@ -141,9 +140,9 @@ def start_testing_videos(test_configs: dict):
             video_frame_nums = numpy.loadtxt(video_frame_nums_path.as_posix(), delimiter=',').astype(int)
         else:
             video_frame_nums = None
-        for scene_name in scene_names:
+        for scene_num in scene_nums:
             scenes_data = {}
-            scene_id = scene_name
+            scene_id = f'{scene_num:05}'
             scenes_data[scene_id] = {
                 'output_dirname': scene_id,
                 'frames_data': {}
@@ -190,8 +189,8 @@ def start_testing_static_videos(test_configs: dict):
     set_num = test_configs['test_set_num']
     video_datapath = database_dirpath / f'TrainTestSets/Set{set_num:02}/TestVideosData.csv'
     video_data = pandas.read_csv(video_datapath)
-    scene_names = test_configs.get('scene_names', video_data['scene_name'].to_numpy())
-    scene_names = numpy.unique(scene_names)
+    scene_nums = test_configs.get('scene_nums', video_data['scene_num'].to_numpy())
+    scene_nums = numpy.unique(scene_nums)
 
     videos_data = [1, 2, 3, ]
     for video_num in videos_data:
@@ -200,9 +199,9 @@ def start_testing_static_videos(test_configs: dict):
             video_frame_nums = numpy.loadtxt(video_frame_nums_path.as_posix(), delimiter=',').astype(int)
         else:
             video_frame_nums = None
-        for scene_name in scene_names:
+        for scene_num in scene_nums:
             scenes_data = {}
-            scene_id = scene_name
+            scene_id = f'{scene_num:05}'
             scenes_data[scene_id] = {
                 'output_dirname': scene_id,
                 'frames_data': {}
@@ -234,26 +233,25 @@ def start_testing_static_videos(test_configs: dict):
 
 
 def demo1a():
-    train_num = 11
-    test_num = 11
-    scene_names = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
+    train_num = 41
+    test_num = 41
+    scene_nums = [8, 21, 30, 31, 34, 38, 40, 41, 45, 55, 63, 82, 103, 110, 114]
 
-    for scene_name in scene_names:
+    for scene_num in scene_nums:
         train_configs = {
             'trainer': f'{this_filename}/{Trainer.this_filename}',
             'train_num': train_num,
-            'database': 'NeRF_LLFF',
-            'database_dirpath': 'Databases/NeRF_LLFF/Data',
+            'database': 'DTU',
+            'database_dirpath': 'Databases/DTU/Data',
             'data_loader': {
-                'data_loader_name': 'NerfLlffDataLoader01',
+                'data_loader_name': 'DtuEstateDataLoader01',
                 'data_preprocessor_name': 'DataPreprocessor01',
                 'train_set_num': 2,
-                'scene_names': [scene_name],
-                'resolution_suffix': '_down4',
-                'recenter_camera_poses': True,
-                'bd_factor': 0.75,
+                'scene_nums': [scene_num],
+                'recenter_camera_poses': False,
+                'bd_factor': None,
                 'spherify': False,
-                'ndc': True,
+                'ndc': False,
                 'batching': True,
                 'downsampling_factor': 1,
                 'num_rays': 2048,
@@ -342,10 +340,9 @@ def demo1a():
             'test_set_num': 2,
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
-            'database_name': 'NeRF_LLFF',
-            'database_dirpath': 'NeRF_LLFF/Data',
-            'resolution_suffix': train_configs['data_loader']['resolution_suffix'],
-            'scene_names': [scene_name],
+            'database_name': 'DTU',
+            'database_dirpath': 'DTU/Data',
+            'scene_nums': [scene_num],
             'device': [0, 1],
         }
         start_training(train_configs)
@@ -356,26 +353,25 @@ def demo1a():
 
 
 def demo1b():
-    train_num = 12
-    test_num = 12
-    scene_names = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
+    train_num = 42
+    test_num = 42
+    scene_nums = [8, 21, 30, 31, 34, 38, 40, 41, 45, 55, 63, 82, 103, 110, 114]
 
-    for scene_name in scene_names:
+    for scene_num in scene_nums:
         train_configs = {
             'trainer': f'{this_filename}/{Trainer.this_filename}',
             'train_num': train_num,
-            'database': 'NeRF_LLFF',
-            'database_dirpath': 'Databases/NeRF_LLFF/Data',
+            'database': 'DTU',
+            'database_dirpath': 'Databases/DTU/Data',
             'data_loader': {
-                'data_loader_name': 'NerfLlffDataLoader01',
+                'data_loader_name': 'DtuEstateDataLoader01',
                 'data_preprocessor_name': 'DataPreprocessor01',
                 'train_set_num': 3,
-                'scene_names': [scene_name],
-                'resolution_suffix': '_down4',
-                'recenter_camera_poses': True,
-                'bd_factor': 0.75,
+                'scene_nums': [scene_num],
+                'recenter_camera_poses': False,
+                'bd_factor': None,
                 'spherify': False,
-                'ndc': True,
+                'ndc': False,
                 'batching': True,
                 'downsampling_factor': 1,
                 'num_rays': 2048,
@@ -464,10 +460,9 @@ def demo1b():
             'test_set_num': 3,
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
-            'database_name': 'NeRF_LLFF',
-            'database_dirpath': 'NeRF_LLFF/Data',
-            'resolution_suffix': train_configs['data_loader']['resolution_suffix'],
-            'scene_names': [scene_name],
+            'database_name': 'DTU',
+            'database_dirpath': 'DTU/Data',
+            'scene_nums': [scene_num],
             'device': [0, 1],
         }
         start_training(train_configs)
@@ -478,26 +473,25 @@ def demo1b():
 
 
 def demo1c():
-    train_num = 13
-    test_num = 13
-    scene_names = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
+    train_num = 43
+    test_num = 43
+    scene_nums = [8, 21, 30, 31, 34, 38, 40, 41, 45, 55, 63, 82, 103, 110, 114]
 
-    for scene_name in scene_names:
+    for scene_num in scene_nums:
         train_configs = {
             'trainer': f'{this_filename}/{Trainer.this_filename}',
             'train_num': train_num,
-            'database': 'NeRF_LLFF',
-            'database_dirpath': 'Databases/NeRF_LLFF/Data',
+            'database': 'DTU',
+            'database_dirpath': 'Databases/DTU/Data',
             'data_loader': {
-                'data_loader_name': 'NerfLlffDataLoader01',
+                'data_loader_name': 'DtuEstateDataLoader01',
                 'data_preprocessor_name': 'DataPreprocessor01',
                 'train_set_num': 4,
-                'scene_names': [scene_name],
-                'resolution_suffix': '_down4',
-                'recenter_camera_poses': True,
-                'bd_factor': 0.75,
+                'scene_nums': [scene_num],
+                'recenter_camera_poses': False,
+                'bd_factor': None,
                 'spherify': False,
-                'ndc': True,
+                'ndc': False,
                 'batching': True,
                 'downsampling_factor': 1,
                 'num_rays': 2048,
@@ -586,10 +580,9 @@ def demo1c():
             'test_set_num': 4,
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
-            'database_name': 'NeRF_LLFF',
-            'database_dirpath': 'NeRF_LLFF/Data',
-            'resolution_suffix': train_configs['data_loader']['resolution_suffix'],
-            'scene_names': [scene_name],
+            'database_name': 'DTU',
+            'database_dirpath': 'DTU/Data',
+            'scene_nums': [scene_num],
             'device': [0, 1],
         }
         start_training(train_configs)
@@ -600,26 +593,25 @@ def demo1c():
 
 
 def demo1d():
-    train_num = 11+3
-    test_num = 11+3
-    scene_names = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
+    train_num = 41+3
+    test_num = 41+3
+    scene_nums = [8, 21, 30, 31, 34, 38, 40, 41, 45, 55, 63, 82, 103, 110, 114]
 
-    for scene_name in scene_names:
+    for scene_num in scene_nums:
         train_configs = {
             'trainer': f'{this_filename}/{Trainer.this_filename}',
             'train_num': train_num,
-            'database': 'NeRF_LLFF',
-            'database_dirpath': 'Databases/NeRF_LLFF/Data',
+            'database': 'DTU',
+            'database_dirpath': 'Databases/DTU/Data',
             'data_loader': {
-                'data_loader_name': 'NerfLlffDataLoader01',
+                'data_loader_name': 'DtuEstateDataLoader01',
                 'data_preprocessor_name': 'DataPreprocessor01',
                 'train_set_num': 2,
-                'scene_names': [scene_name],
-                'resolution_suffix': '_down4',
-                'recenter_camera_poses': True,
-                'bd_factor': 0.75,
+                'scene_nums': [scene_num],
+                'recenter_camera_poses': False,
+                'bd_factor': None,
                 'spherify': False,
-                'ndc': True,
+                'ndc': False,
                 'batching': True,
                 'downsampling_factor': 1,
                 'num_rays': 1024,
@@ -699,10 +691,9 @@ def demo1d():
             'test_set_num': 2,
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
-            'database_name': 'NeRF_LLFF',
-            'database_dirpath': 'NeRF_LLFF/Data',
-            'resolution_suffix': train_configs['data_loader']['resolution_suffix'],
-            'scene_names': [scene_name],
+            'database_name': 'DTU',
+            'database_dirpath': 'DTU/Data',
+            'scene_nums': [scene_num],
             'device': [0, 1],
         }
         start_training(train_configs)
@@ -713,26 +704,25 @@ def demo1d():
 
 
 def demo1e():
-    train_num = 12+3
-    test_num = 12+3
-    scene_names = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
+    train_num = 42+3
+    test_num = 42+3
+    scene_nums = [8, 21, 30, 31, 34, 38, 40, 41, 45, 55, 63, 82, 103, 110, 114]
 
-    for scene_name in scene_names:
+    for scene_num in scene_nums:
         train_configs = {
             'trainer': f'{this_filename}/{Trainer.this_filename}',
             'train_num': train_num,
-            'database': 'NeRF_LLFF',
-            'database_dirpath': 'Databases/NeRF_LLFF/Data',
+            'database': 'DTU',
+            'database_dirpath': 'Databases/DTU/Data',
             'data_loader': {
-                'data_loader_name': 'NerfLlffDataLoader01',
+                'data_loader_name': 'DtuEstateDataLoader01',
                 'data_preprocessor_name': 'DataPreprocessor01',
                 'train_set_num': 3,
-                'scene_names': [scene_name],
-                'resolution_suffix': '_down4',
-                'recenter_camera_poses': True,
-                'bd_factor': 0.75,
+                'scene_nums': [scene_num],
+                'recenter_camera_poses': False,
+                'bd_factor': None,
                 'spherify': False,
-                'ndc': True,
+                'ndc': False,
                 'batching': True,
                 'downsampling_factor': 1,
                 'num_rays': 1024,
@@ -812,10 +802,9 @@ def demo1e():
             'test_set_num': 3,
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
-            'database_name': 'NeRF_LLFF',
-            'database_dirpath': 'NeRF_LLFF/Data',
-            'resolution_suffix': train_configs['data_loader']['resolution_suffix'],
-            'scene_names': [scene_name],
+            'database_name': 'DTU',
+            'database_dirpath': 'DTU/Data',
+            'scene_nums': [scene_num],
             'device': [0, 1],
         }
         start_training(train_configs)
@@ -826,26 +815,25 @@ def demo1e():
 
 
 def demo1f():
-    train_num = 13+3
-    test_num = 13+3
-    scene_names = ['fern', 'flower', 'fortress', 'horns', 'leaves', 'orchids', 'room', 'trex']
+    train_num = 43+3
+    test_num = 43+3
+    scene_nums = [8, 21, 30, 31, 34, 38, 40, 41, 45, 55, 63, 82, 103, 110, 114]
 
-    for scene_name in scene_names:
+    for scene_num in scene_nums:
         train_configs = {
             'trainer': f'{this_filename}/{Trainer.this_filename}',
             'train_num': train_num,
-            'database': 'NeRF_LLFF',
-            'database_dirpath': 'Databases/NeRF_LLFF/Data',
+            'database': 'DTU',
+            'database_dirpath': 'Databases/DTU/Data',
             'data_loader': {
-                'data_loader_name': 'NerfLlffDataLoader01',
+                'data_loader_name': 'DtuEstateDataLoader01',
                 'data_preprocessor_name': 'DataPreprocessor01',
                 'train_set_num': 4,
-                'scene_names': [scene_name],
-                'resolution_suffix': '_down4',
-                'recenter_camera_poses': True,
-                'bd_factor': 0.75,
+                'scene_nums': [scene_num],
+                'recenter_camera_poses': False,
+                'bd_factor': None,
                 'spherify': False,
-                'ndc': True,
+                'ndc': False,
                 'batching': True,
                 'downsampling_factor': 1,
                 'num_rays': 1024,
@@ -925,10 +913,9 @@ def demo1f():
             'test_set_num': 4,
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
-            'database_name': 'NeRF_LLFF',
-            'database_dirpath': 'NeRF_LLFF/Data',
-            'resolution_suffix': train_configs['data_loader']['resolution_suffix'],
-            'scene_names': [scene_name],
+            'database_name': 'DTU',
+            'database_dirpath': 'DTU/Data',
+            'scene_nums': [scene_num],
             'device': [0, 1],
         }
         start_training(train_configs)
@@ -941,7 +928,7 @@ def demo1f():
 def demo2():
     configs = {
         'trainer': f'{this_filename}/{Trainer.this_filename}',
-        'train_num': 12,
+        'train_num': 41,
         'resume_training': True,
     }
     start_training(configs)
@@ -953,16 +940,16 @@ def demo3():
     Saves plots mid training
     :return:
     """
-    train_num = 12
-    scene_name = 'horns'
-    loss_plots_dirpath = Path(f'../Runs/Training/Train{train_num:04}/{scene_name}/Logs')
+    train_num = 41
+    scene_num = 8
+    loss_plots_dirpath = Path(f'../Runs/Training/Train{train_num:04}/{scene_num:05}/Logs')
     Trainer.save_plots(loss_plots_dirpath)
     import sys
     sys.exit(0)
 
 
 def demo4():
-    for train_num in [11, 12, 13]:
+    for train_num in [41, 42, 43]:
         test_num = train_num
         test_configs = {
             'Tester': f'{this_filename}/{Tester.this_filename}',
@@ -970,9 +957,9 @@ def demo4():
             'test_set_num': 2,
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
-            'database_name': 'NeRF_LLFF',
-            'database_dirpath': 'NeRF_LLFF/Data',
-            'device': 'gpu0',
+            'database_name': 'DTU',
+            'database_dirpath': 'DTU/Data',
+            'device': [0, 1],
         }
         start_testing(test_configs)
         start_testing_videos(test_configs)

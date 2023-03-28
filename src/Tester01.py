@@ -41,6 +41,7 @@ class NerfTester:
     def build_model(self):
         self.data_preprocessor = get_data_preprocessor(self.train_configs, mode='test', model_configs=self.model_configs)
         self.model = get_model(self.train_configs, self.model_configs)
+        self.model = torch.nn.DataParallel(self.model, device_ids=self.test_configs['device'])
         return
 
     def load_model(self, model_path: Path):
@@ -56,10 +57,9 @@ class NerfTester:
         return
 
     def predict_frame(self, camera_pose: numpy.ndarray, view_camera_pose: numpy.ndarray = None, secondary_poses: List[numpy.ndarray] = None,
-                      frame: Optional[numpy.ndarray] = None, secondary_frames: Optional[List[numpy.ndarray]] = None,
-                      intrinsic: Optional[numpy.ndarray] = None, secondary_intrinsics: Optional[List[numpy.ndarray]] = None):
+                      intrinsic: Optional[numpy.ndarray] = None, view_intrinsic: Optional[numpy.ndarray] = None, secondary_intrinsics: Optional[List[numpy.ndarray]] = None):
         input_dict = self.data_preprocessor.create_test_data(camera_pose, view_camera_pose, secondary_poses, True,
-                                                             frame, secondary_frames, intrinsic, secondary_intrinsics)
+                                                             intrinsic, view_intrinsic, secondary_intrinsics)
 
         with torch.no_grad():
             output_dict = self.model(input_dict, sec_views_vis=secondary_poses is not None)
@@ -189,7 +189,6 @@ def start_testing(test_configs: dict, scenes_data: dict, output_dir_suffix: str 
         frame_nums = scene_data['frames_data'].keys()
         if save_visibility:
             train_frame_nums = [frame_num for frame_num in frame_nums if scene_data['frames_data'][frame_num]['is_train_frame']]
-            train_poses = [scene_data['frames_data'][frame_num]['extrinsic'] for frame_num in train_frame_nums]
         for frame_num in tqdm(frame_nums, desc=f'{scene_id}'):
             frame_data = scene_data['frames_data'][frame_num]
             frame_output_path = scene_output_dirpath / f'PredictedFrames/{frame_num:04}.png'
@@ -210,17 +209,16 @@ def start_testing(test_configs: dict, scenes_data: dict, output_dir_suffix: str 
             if inference_required:
                 tgt_pose = frame_data['extrinsic']
                 view_tgt_pose = frame_data.get('extrinsic_viewcam', None)
-                frame = frame_data.get('frame', None)
                 intrinsic = frame_data.get('intrinsic', None)
+                view_intrinsic = frame_data.get('intrinsic_viewcam', None)
                 secondary_poses = None
-                secondary_frames, secondary_intrinsics = None, None
+                secondary_intrinsics = None
                 if save_visibility and frame_data['is_train_frame']:
                     secondary_frame_nums = [frame_num1 for frame_num1 in train_frame_nums if frame_num1 != frame_num]
-                    secondary_poses = [pose for pose in train_poses if not numpy.allclose(pose, tgt_pose)]
-                    secondary_frames = [scene_data['frames_data'][frame2_num]['frame'] for frame2_num in secondary_frame_nums]
+                    secondary_poses = [scene_data['frames_data'][frame2_num]['extrinsic'] for frame2_num in secondary_frame_nums]
                     secondary_intrinsics = [scene_data['frames_data'][frame2_num]['intrinsic'] for frame2_num in secondary_frame_nums]
                 predictions = tester.predict_frame(tgt_pose, view_tgt_pose, secondary_poses,
-                                                   frame, secondary_frames, intrinsic, secondary_intrinsics)
+                                                   intrinsic, view_intrinsic, secondary_intrinsics)
 
                 tester.save_image(frame_output_path, predictions['image'])
                 if save_depth:
@@ -236,8 +234,4 @@ def start_testing(test_configs: dict, scenes_data: dict, output_dir_suffix: str 
                         for i in range(len(secondary_frame_nums)):
                             visibility_output_path = scene_output_dirpath / f'PredictedVisibilities/{frame_num:04}_{secondary_frame_nums[i]:04}.npy'
                             tester.save_visibility(visibility_output_path, predictions['visibility2'][i], as_png=True)
-                    if 'conv_visibility2' in predictions:
-                        for i in range(len(secondary_frame_nums)):
-                            visibility_output_path = scene_output_dirpath / f'PredictedVisibilities/{frame_num:04}_{secondary_frame_nums[i]:04}_conv.npy'
-                            tester.save_visibility(visibility_output_path, predictions['conv_visibility2'][i], as_png=True)
     return output_dirpath

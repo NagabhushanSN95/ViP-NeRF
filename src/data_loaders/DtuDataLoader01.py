@@ -1,5 +1,5 @@
 # Shree KRISHNAYa Namaha
-# Loads NeRF_LLFF Data for NeRF, Colmap sparse depth, dense depth, visibility prior for NeRF-LLFF Dataset
+# Loads RealEstate Data for NeRF, Colmap sparse depth, dense depth, visibility prior from DTU dataset.
 # Author: Nagabhushan S N
 # Last Modified: 28/03/2023
 
@@ -13,14 +13,13 @@ import skimage.io
 from data_loaders.DataLoaderParent import DataLoaderParent
 
 
-class NerfLlffDataLoader(DataLoaderParent):
+class DtuDataLoader(DataLoaderParent):
     def __init__(self, configs: dict, data_dirpath: Path, mode: Optional[str]):
-        super(NerfLlffDataLoader, self).__init__()
+        super(DtuDataLoader, self).__init__()
         self.configs = configs
         self.data_dirpath = data_dirpath
         self.mode = mode
-        self.scene_name = self.configs['data_loader']['scene_id']
-        self.resolution_suffix = self.configs['data_loader']['resolution_suffix']
+        self.scene_num = int(configs['data_loader']['scene_id'])
 
         self.sparse_depth_needed = 'sparse_depth' in self.configs['data_loader']
         self.dense_depth_needed = ('dense_depth' in self.configs['data_loader'])
@@ -50,12 +49,12 @@ class NerfLlffDataLoader(DataLoaderParent):
         set_num = self.configs['data_loader']['train_set_num']
         video_datapath = self.data_dirpath / f'TrainTestSets/Set{set_num:02}/{self.mode.capitalize()}VideosData.csv'
         video_data = pandas.read_csv(video_datapath)
-        frame_nums = video_data.loc[video_data['scene_name'] == self.scene_name]['pred_frame_num'].to_numpy()
+        frame_nums = video_data.loc[video_data['scene_num'] == self.scene_num]['pred_frame_num'].to_numpy()
         return frame_nums
 
     def load_nerf_data(self, data_dict):
         frame_nums = data_dict['frame_nums']
-        images_dirpath = self.data_dirpath / f'all/DatabaseData/{self.scene_name}/rgb{self.resolution_suffix}'
+        images_dirpath = self.data_dirpath / f'all/DatabaseData/{self.scene_num:05}/rgb'
         if not images_dirpath.exists():
             print(f'{images_dirpath.as_posix()} does not exist, returning.')
             return
@@ -63,15 +62,13 @@ class NerfLlffDataLoader(DataLoaderParent):
         images = [self.read_image(image_path) for image_path in images_paths]
         images = numpy.stack(images)
 
-        bds_path = self.data_dirpath / f'all/DatabaseData/{self.scene_name}/DepthBounds.csv'
-        bds = numpy.loadtxt(bds_path.as_posix(), delimiter=',')[frame_nums]
-        bounds = numpy.array([bds.min(), bds.max()])
+        bounds = numpy.array([0.1, 5]).astype('float32')
 
-        extrinsics_path = self.data_dirpath / f'all/DatabaseData/{self.scene_name}/CameraExtrinsics.csv'
+        extrinsics_path = self.data_dirpath / f'all/DatabaseData/{self.scene_num:05}/CameraExtrinsics.csv'
         extrinsic_matrices = numpy.loadtxt(extrinsics_path.as_posix(), delimiter=',').reshape((-1, 4, 4))
         extrinsics = extrinsic_matrices[frame_nums]
 
-        intrinsics_path = self.data_dirpath / f'all/DatabaseData/{self.scene_name}/CameraIntrinsics{self.resolution_suffix}.csv'
+        intrinsics_path = self.data_dirpath / f'all/DatabaseData/{self.scene_num:05}/CameraIntrinsics.csv'
         intrinsic_matrices = numpy.loadtxt(intrinsics_path.as_posix(), delimiter=',').reshape((-1, 3, 3))
         intrinsics = intrinsic_matrices[frame_nums]
 
@@ -89,9 +86,10 @@ class NerfLlffDataLoader(DataLoaderParent):
         sparse_depth_data = {}
         depth_dirname = self.configs['data_loader']['sparse_depth']['dirname']
         for frame_num in data_dict['frame_nums']:
-            depth_path = self.data_dirpath / f'all/EstimatedDepths/{depth_dirname}/{self.scene_name}/EstimatedDepths{self.resolution_suffix}/{frame_num:04}.csv'
-            depth_data = pandas.read_csv(depth_path)
-            sparse_depth_data[frame_num] = depth_data
+            depth_path = self.data_dirpath / f'all/EstimatedDepths/{depth_dirname}/{self.scene_num:05}/EstimatedDepths/{frame_num:04}.csv'
+            if depth_path.exists():
+                depth_data = pandas.read_csv(depth_path)
+                sparse_depth_data[frame_num] = depth_data
         return sparse_depth_data
 
     def load_dense_depth_data(self, data_dict: dict):
@@ -104,13 +102,13 @@ class NerfLlffDataLoader(DataLoaderParent):
         if 'weights_suffix' in self.configs['data_loader']['dense_depth']:
             weights_suffix = self.configs['data_loader']['dense_depth']['weights_suffix']
         for frame_num in data_dict['frame_nums']:
-            depth_path = self.data_dirpath / f'all/EstimatedDepths/{depth_dirname}/{self.scene_name}/EstimatedDepths{self.resolution_suffix}/{frame_num:04}.npy'
+            depth_path = self.data_dirpath / f'all/EstimatedDepths/{depth_dirname}/{self.scene_num:05}/EstimatedDepths/{frame_num:04}.npy'
             print(f'Loading depth: {depth_path.as_posix()}')
 
             depth = numpy.load(depth_path.as_posix())
             depths.append(depth)
 
-            weights_path = self.data_dirpath / f'all/EstimatedDepths/{depth_dirname}/{self.scene_name}/Weights{self.resolution_suffix}{weights_suffix}/{frame_num:04}.npy'
+            weights_path = self.data_dirpath / f'all/EstimatedDepths/{depth_dirname}/{self.scene_num:05}/Weights{weights_suffix}/{frame_num:04}.npy'
             if weights_path.exists():
                 depth_weight = numpy.load(weights_path.as_posix())[:, :]
             else:
@@ -136,7 +134,7 @@ class NerfLlffDataLoader(DataLoaderParent):
                 frame2_nums = [x for x in frame1_nums if x != frame1_num]
                 frame1_masks = []
                 for frame2_num in frame2_nums:
-                    mask_path = self.data_dirpath / f'all/VisibilityMasks/{masks_dirname}/{self.scene_name}/VisibilityMasks/{frame1_num:04}_{frame2_num:04}.png'
+                    mask_path = self.data_dirpath / f'all/VisibilityMasks/{masks_dirname}/{self.scene_num:05}/VisibilityMasks/{frame1_num:04}_{frame2_num:04}.png'
                     print(f'Loading visibility prior mask: {mask_path.as_posix()}')
                     mask = self.read_mask(mask_path)
                     frame1_masks.append(mask)
@@ -152,7 +150,7 @@ class NerfLlffDataLoader(DataLoaderParent):
                 frame2_nums = [x for x in frame1_nums if x != frame1_num]
                 frame1_weights = []
                 for frame2_num in frame2_nums:
-                    weight_path = self.data_dirpath / f'all/VisibilityMasks/{weights_dirname}/{self.scene_name}/VisibilityWeights/{frame1_num:04}_{frame2_num:04}.npy'
+                    weight_path = self.data_dirpath / f'all/VisibilityMasks/{weights_dirname}/{self.scene_num:05}/VisibilityWeights/{frame1_num:04}_{frame2_num:04}.npy'
                     print(f'Loading visibility prior weight: {weight_path.as_posix()}')
                     weight = self.read_npy_file(weight_path)
                     frame1_weights.append(weight)

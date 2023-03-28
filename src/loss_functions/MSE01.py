@@ -1,6 +1,6 @@
 # Shree KRISHNAya Namaha
 # MSE loss function
-# Extended from MSE07.py. Excludes sparse depth pixels when computing MSE loss - in line with DS-NeRF.
+# MSE loss function. Excludes sparse depth pixels.
 # Author: Nagabhushan S N
 # Last Modified: 04/12/2022
 
@@ -22,46 +22,49 @@ class MSE(LossFunctionParent):
     def __init__(self, configs: dict, loss_configs: dict):
         self.configs = configs
         self.loss_configs = loss_configs
-        self.coarse_mlp_needed = self.configs['model']['use_coarse_mlp']
-        self.fine_mlp_needed = self.configs['model']['use_fine_mlp']
-        self.num_rays = self.configs['data_loader']['num_rays']
+        self.coarse_mlp_needed = 'coarse_mlp' in self.configs['model']
+        self.fine_mlp_needed = 'fine_mlp' in self.configs['model']
         return
 
-    def compute_loss(self, input_dict: dict, output_dict: dict, training: bool = True):
-        target_rgb = input_dict['target_rgb'][:self.num_rays]
+    def compute_loss(self, input_dict: dict, output_dict: dict, return_loss_maps: bool = False):
         total_loss = 0
         loss_maps = {}
 
+        indices_mask = input_dict['indices_mask_nerf']
+        target_rgb = input_dict['target_rgb']
+
         if self.coarse_mlp_needed:
-            pred_rgb_coarse = output_dict['rgb_coarse'][:self.num_rays]
-            mse_coarse = self.compute_mse(pred_rgb_coarse, target_rgb, training)
+            pred_rgb_coarse = output_dict['rgb_coarse']
+            mse_coarse = self.compute_mse(pred_rgb_coarse, target_rgb, indices_mask, return_loss_maps)
             total_loss += mse_coarse['loss_value']
-            if not training:
+            if return_loss_maps:
                 loss_maps = LossUtils01.update_loss_map_dict(loss_maps, mse_coarse['loss_maps'], suffix='coarse')
 
         if self.fine_mlp_needed:
-            pred_rgb_fine = output_dict['rgb_fine'][:self.num_rays]
-            mse_fine = self.compute_mse(pred_rgb_fine, target_rgb, training)
+            pred_rgb_fine = output_dict['rgb_fine']
+            mse_fine = self.compute_mse(pred_rgb_fine, target_rgb, indices_mask, return_loss_maps)
             total_loss += mse_fine['loss_value']
-            if not training:
+            if return_loss_maps:
                 loss_maps = LossUtils01.update_loss_map_dict(loss_maps, mse_fine['loss_maps'], suffix='fine')
 
         loss_dict = {
             'loss_value': total_loss,
         }
-        if not training:
+        if return_loss_maps:
             loss_dict['loss_maps'] = loss_maps
         return loss_dict
 
     @staticmethod
-    def compute_mse(pred_value, true_value, training: bool):
+    def compute_mse(pred_value, true_value, indices_mask, return_loss_maps: bool):
+        pred_value = pred_value[indices_mask]
+        true_value = true_value[indices_mask]
         error = pred_value - true_value
         mse = torch.mean(torch.square(error), dim=1)
-        mean_mse = torch.mean(mse)
+        mean_mse = torch.mean(mse) if pred_value.numel() > 0 else 0
         loss_dict = {
             'loss_value': mean_mse,
         }
-        if not training:
+        if return_loss_maps:
             loss_dict['loss_maps'] = {
                 this_filename: mse
             }
