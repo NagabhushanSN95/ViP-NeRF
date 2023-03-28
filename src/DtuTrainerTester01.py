@@ -126,7 +126,7 @@ def start_testing_videos(test_configs: dict):
     scene_nums = test_configs.get('scene_nums', video_data['scene_num'].to_numpy())
     scene_nums = numpy.unique(scene_nums)
 
-    videos_data = [1, 2, 3, ]
+    videos_data = [1, ]
     for video_num in videos_data:
         video_frame_nums_path = database_dirpath / f'TrainTestSets/Set{set_num:02}/VideoPoses{video_num:02}/VideoFrameNums.csv'
         if video_frame_nums_path.exists():
@@ -184,7 +184,7 @@ def start_testing_static_videos(test_configs: dict):
     scene_nums = test_configs.get('scene_nums', video_data['scene_num'].to_numpy())
     scene_nums = numpy.unique(scene_nums)
 
-    videos_data = [1, 2, 3, ]
+    videos_data = [1, ]
     for video_num in videos_data:
         video_frame_nums_path = database_dirpath / f'TrainTestSets/Set{set_num:02}/VideoPoses{video_num:02}/VideoFrameNums.csv'
         if video_frame_nums_path.exists():
