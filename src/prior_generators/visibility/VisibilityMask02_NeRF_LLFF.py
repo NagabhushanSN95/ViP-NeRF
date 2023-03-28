@@ -230,7 +230,7 @@ def save_configs(output_dirpath: Path, configs: dict):
 
 
 def start_generation(gen_configs: dict):
-    root_dirpath = Path('../../')
+    root_dirpath = Path('../../../')
     database_dirpath = root_dirpath / 'Data/Databases' / gen_configs['database_dirpath']
 
     output_dirpath = database_dirpath / f"all/VisibilityMasks/VW{gen_configs['gen_num']:02}"

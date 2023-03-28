@@ -1,8 +1,7 @@
 # Shree KRISHNAya Namaha
-# Computes visibility weights for frames. Supports multiple frames.
-# Extended from VisibilityMask08_DTU.py for multiple input frames.
+# Computes visibility weights/masks for frames.
 # Author: Nagabhushan S N
-# Last Modified: 03/01/2023
+# Last Modified: 07/12/2022
 
 import time
 import datetime
@@ -39,8 +38,7 @@ class VisibilityWeightsComputer:
         return weights
 
     def get_depth_planes(self, min_depth, max_depth, num_depth_planes):
-        # depth_planes = 1 / numpy.linspace(1/min_depth, 1/max_depth, num_depth_planes)
-        depth_planes = numpy.linspace(min_depth, max_depth, num_depth_planes)
+        depth_planes = 1 / numpy.linspace(1/min_depth, 1/max_depth, num_depth_planes)
         return depth_planes
 
     def create_psv(self, frame1, frame2, depth_planes, extrinsic1, extrinsic2, intrinsic1, intrinsic2):
@@ -232,13 +230,13 @@ def save_configs(output_dirpath: Path, configs: dict):
 
 
 def start_generation(gen_configs: dict):
-    root_dirpath = Path('../../')
+    root_dirpath = Path('../../../')
     database_dirpath = root_dirpath / 'Data/Databases' / gen_configs['database_dirpath']
 
-    min_depth = 0.1
-    max_depth = 5
+    min_depth = 1
+    max_depth = 100
 
-    output_dirpath = database_dirpath / f"all/VisibilityMasks/VW{gen_configs['gen_num']:02}"
+    output_dirpath = database_dirpath / f"test/VisibilityMasks/VW{gen_configs['gen_num']:02}"
     output_dirpath.mkdir(parents=True, exist_ok=True)
     save_configs(output_dirpath, gen_configs)
 
@@ -263,10 +261,10 @@ def start_generation(gen_configs: dict):
                         weights1_output_path.exists() and weights2_output_path.exists():
                     continue
 
-                frame1_path = database_dirpath / f'all/DatabaseData/{scene_num:05}/rgb/{frame1_num:04}.png'
-                frame2_path = database_dirpath / f'all/DatabaseData/{scene_num:05}/rgb/{frame2_num:04}.png'
-                extrinsics_path = database_dirpath / f'all/DatabaseData/{scene_num:05}/CameraExtrinsics.csv'
-                intrinsics_path = database_dirpath / f'all/DatabaseData/{scene_num:05}/CameraIntrinsics.csv'
+                frame1_path = database_dirpath / f'test/DatabaseData/{scene_num:05}/rgb/{frame1_num:04}.png'
+                frame2_path = database_dirpath / f'test/DatabaseData/{scene_num:05}/rgb/{frame2_num:04}.png'
+                extrinsics_path = database_dirpath / f'test/DatabaseData/{scene_num:05}/CameraExtrinsics.csv'
+                intrinsics_path = database_dirpath / f'test/DatabaseData/{scene_num:05}/CameraIntrinsics.csv'
 
                 weights_computer = VisibilityWeightsComputer(gen_configs)
 
@@ -293,9 +291,9 @@ def demo1():
         'generator': this_filename,
         'gen_num': 2,
         'gen_set_num': 2,
-        'database_name': 'DTU',
-        'database_dirpath': 'DTU/Data',
-        'num_depth_planes': 128,
+        'database_name': 'RealEstate10K',
+        'database_dirpath': 'RealEstate10K/Data',
+        'num_depth_planes': 64,
         'temperature': 10,
     }
     start_generation(gen_configs)
@@ -304,9 +302,9 @@ def demo1():
         'generator': this_filename,
         'gen_num': 3,
         'gen_set_num': 3,
-        'database_name': 'DTU',
-        'database_dirpath': 'DTU/Data',
-        'num_depth_planes': 128,
+        'database_name': 'RealEstate10K',
+        'database_dirpath': 'RealEstate10K/Data',
+        'num_depth_planes': 64,
         'temperature': 10,
     }
     start_generation(gen_configs)
@@ -315,9 +313,9 @@ def demo1():
         'generator': this_filename,
         'gen_num': 4,
         'gen_set_num': 4,
-        'database_name': 'DTU',
-        'database_dirpath': 'DTU/Data',
-        'num_depth_planes': 128,
+        'database_name': 'RealEstate10K',
+        'database_dirpath': 'RealEstate10K/Data',
+        'num_depth_planes': 64,
         'temperature': 10,
     }
     start_generation(gen_configs)
