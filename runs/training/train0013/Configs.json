@@ -1,0 +1,109 @@
+{
+    "trainer": "NerfLlffTrainerTester01/Trainer01",
+    "train_num": 13,
+    "database": "NeRF_LLFF",
+    "database_dirpath": "databases/NeRF_LLFF/data",
+    "data_loader": {
+        "data_loader_name": "NerfLlffDataLoader01",
+        "data_preprocessor_name": "DataPreprocessor01",
+        "train_set_num": 4,
+        "scene_names": [
+            "fern",
+            "flower",
+            "fortress",
+            "horns",
+            "leaves",
+            "orchids",
+            "room",
+            "trex"
+        ],
+        "resolution_suffix": "_down4",
+        "recenter_camera_poses": true,
+        "bd_factor": 0.75,
+        "spherify": false,
+        "ndc": true,
+        "batching": true,
+        "downsampling_factor": 1,
+        "num_rays": 2048,
+        "precrop_fraction": 1,
+        "precrop_iterations": -1,
+        "visibility_prior": {
+            "load_masks": true,
+            "load_weights": false,
+            "masks_dirname": "VW04"
+        },
+        "sparse_depth": {
+            "dirname": "DE04",
+            "num_rays": 2048
+        }
+    },
+    "model": {
+        "name": "VipNeRF01",
+        "coarse_mlp": {
+            "num_samples": 64,
+            "netdepth": 8,
+            "netwidth": 256,
+            "points_positional_encoding_degree": 10,
+            "views_positional_encoding_degree": 4,
+            "use_view_dirs": true,
+            "view_dependent_rgb": true,
+            "predict_visibility": true
+        },
+        "fine_mlp": {
+            "num_samples": 128,
+            "netdepth": 8,
+            "netwidth": 256,
+            "points_positional_encoding_degree": 10,
+            "views_positional_encoding_degree": 4,
+            "use_view_dirs": true,
+            "view_dependent_rgb": true,
+            "predict_visibility": true
+        },
+        "chunk": 4096,
+        "lindisp": false,
+        "netchunk": 16384,
+        "perturb": true,
+        "raw_noise_std": 1.0,
+        "white_bkgd": false
+    },
+    "losses": [
+        {
+            "name": "MSE01",
+            "weight": 1
+        },
+        {
+            "name": "VisibilityLoss01",
+            "weight": 0.1
+        },
+        {
+            "name": "VisibilityPriorLoss01",
+            "iter_weights": {
+                "0": 0,
+                "30000": 0.001
+            }
+        },
+        {
+            "name": "SparseDepthMSE01",
+            "weight": 0.1
+        }
+    ],
+    "optimizer": {
+        "lr_decayer_name": "NeRFLearningRateDecayer01",
+        "lr_initial": 0.0005,
+        "lr_decay": 250,
+        "beta1": 0.9,
+        "beta2": 0.999
+    },
+    "resume_training": true,
+    "num_iterations": 50000,
+    "validation_interval": 10000,
+    "validation_chunk_size": 65536,
+    "validation_save_loss_maps": false,
+    "model_save_interval": 10000,
+    "mixed_precision_training": false,
+    "seed": 0,
+    "device": [
+        0,
+        1
+    ]
+}
