@@ -1,7 +1,7 @@
 # Shree KRISHNAya Namaha
 # Computes visibility weights/masks for frames.
 # Author: Nagabhushan S N
-# Last Modified: 07/12/2022
+# Last Modified: 06/12/2022
 
 import time
 import datetime
@@ -231,49 +231,47 @@ def save_configs(output_dirpath: Path, configs: dict):
 
 def start_generation(gen_configs: dict):
     root_dirpath = Path('../../')
-    project_dirpath = root_dirpath / '../../../../'
-    database_dirpath = project_dirpath / 'Databases' / gen_configs['database_dirpath']
+    database_dirpath = root_dirpath / 'Data/Databases' / gen_configs['database_dirpath']
 
-    min_depth = 1
-    max_depth = 100
-
-    output_dirpath = database_dirpath / f"test/VisibilityMasks/VSR006_VW{gen_configs['gen_num']:02}"
+    output_dirpath = database_dirpath / f"all/VisibilityMasks/VW{gen_configs['gen_num']:02}"
     output_dirpath.mkdir(parents=True, exist_ok=True)
     save_configs(output_dirpath, gen_configs)
 
     set_num = gen_configs['gen_set_num']
     video_datapath = database_dirpath / f'TrainTestSets/Set{set_num:02}/TrainVideosData.csv'
     video_data = pandas.read_csv(video_datapath)
-    scene_nums = numpy.unique(video_data['scene_num'].to_numpy())
+    scene_names = numpy.unique(video_data['scene_name'].to_numpy())
+    suffix = gen_configs['resolution_suffix']
 
-    for scene_num in tqdm(scene_nums):
-        frame_nums = video_data.loc[video_data['scene_num'] == scene_num]['pred_frame_num'].to_numpy()
-
-        # if scene_num not in ['00000']:
-        #     continue
+    for scene_name in tqdm(scene_names):
+        frame_nums = video_data.loc[video_data['scene_name'] == scene_name]['pred_frame_num'].to_numpy()
 
         for frame1_num in frame_nums:
             for frame2_num in frame_nums:
                 if frame2_num <= frame1_num:
                     continue
 
-                mask1_output_path = output_dirpath / f'{scene_num:05}/VisibilityMasks/{frame1_num:04}_{frame2_num:04}.npy'
-                mask2_output_path = output_dirpath / f'{scene_num:05}/VisibilityMasks/{frame2_num:04}_{frame1_num:04}.npy'
-                weights1_output_path = output_dirpath / f'{scene_num:05}/VisibilityWeights/{frame1_num:04}_{frame2_num:04}.npy'
-                weights2_output_path = output_dirpath / f'{scene_num:05}/VisibilityWeights/{frame2_num:04}_{frame1_num:04}.npy'
+                mask1_output_path = output_dirpath / f'{scene_name}/VisibilityMasks/{frame1_num:04}_{frame2_num:04}.npy'
+                mask2_output_path = output_dirpath / f'{scene_name}/VisibilityMasks/{frame2_num:04}_{frame1_num:04}.npy'
+                weights1_output_path = output_dirpath / f'{scene_name}/VisibilityWeights/{frame1_num:04}_{frame2_num:04}.npy'
+                weights2_output_path = output_dirpath / f'{scene_name}/VisibilityWeights/{frame2_num:04}_{frame1_num:04}.npy'
                 if mask1_output_path.exists() and mask2_output_path.exists() and \
                         weights1_output_path.exists() and weights2_output_path.exists():
                     continue
 
-                frame1_path = database_dirpath / f'test/DatabaseData/{scene_num:05}/rgb/{frame1_num:04}.png'
-                frame2_path = database_dirpath / f'test/DatabaseData/{scene_num:05}/rgb/{frame2_num:04}.png'
-                extrinsics_path = database_dirpath / f'test/DatabaseData/{scene_num:05}/CameraExtrinsics.csv'
-                intrinsics_path = database_dirpath / f'test/DatabaseData/{scene_num:05}/CameraIntrinsics.csv'
+                frame1_path = database_dirpath / f'all/DatabaseData/{scene_name}/rgb{suffix}/{frame1_num:04}.png'
+                frame2_path = database_dirpath / f'all/DatabaseData/{scene_name}/rgb{suffix}/{frame2_num:04}.png'
+                bounds_path = database_dirpath / f'all/DatabaseData/{scene_name}/DepthBounds.csv'
+                extrinsics_path = database_dirpath / f'all/DatabaseData/{scene_name}/CameraExtrinsics.csv'
+                intrinsics_path = database_dirpath / f'all/DatabaseData/{scene_name}/CameraIntrinsics{suffix}.csv'
 
                 weights_computer = VisibilityWeightsComputer(gen_configs)
 
                 frame1 = weights_computer.read_image(frame1_path)
                 frame2 = weights_computer.read_image(frame2_path)
+                bounds = numpy.loadtxt(bounds_path.as_posix(), delimiter=',')[frame_nums]
+                min_depth = bounds.min()
+                max_depth = bounds.max()
                 extrinsics = numpy.loadtxt(extrinsics_path.as_posix(), delimiter=',').reshape((-1, 4, 4))[frame_nums]
                 intrinsics = numpy.loadtxt(intrinsics_path.as_posix(), delimiter=',').reshape((-1, 3, 3))[frame_nums]
 
@@ -295,10 +293,11 @@ def demo1():
         'generator': this_filename,
         'gen_num': 2,
         'gen_set_num': 2,
-        'database_name': 'RealEstate10K',
-        'database_dirpath': 'RealEstate10K/Data',
+        'database_name': 'NeRF_LLFF',
+        'database_dirpath': 'NeRF_LLFF/Data',
         'num_depth_planes': 64,
         'temperature': 10,
+        'resolution_suffix': '_down4',
     }
     start_generation(gen_configs)
 
@@ -306,10 +305,11 @@ def demo1():
         'generator': this_filename,
         'gen_num': 3,
         'gen_set_num': 3,
-        'database_name': 'RealEstate10K',
-        'database_dirpath': 'RealEstate10K/Data',
+        'database_name': 'NeRF_LLFF',
+        'database_dirpath': 'NeRF_LLFF/Data',
         'num_depth_planes': 64,
         'temperature': 10,
+        'resolution_suffix': '_down4',
     }
     start_generation(gen_configs)
 
@@ -317,10 +317,11 @@ def demo1():
         'generator': this_filename,
         'gen_num': 4,
         'gen_set_num': 4,
-        'database_name': 'RealEstate10K',
-        'database_dirpath': 'RealEstate10K/Data',
+        'database_name': 'NeRF_LLFF',
+        'database_dirpath': 'NeRF_LLFF/Data',
         'num_depth_planes': 64,
         'temperature': 10,
+        'resolution_suffix': '_down4',
     }
     start_generation(gen_configs)
     return
