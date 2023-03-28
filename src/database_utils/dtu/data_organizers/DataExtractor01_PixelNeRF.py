@@ -131,9 +131,9 @@ def demo1():
     features = [DataFeatures.FRAME, DataFeatures.EXTRINSIC, DataFeatures.INTRINSIC]
 
     root_dirpath = Path('../../../../')
-    database_dirpath = root_dirpath / 'Data/Databases/DTU/Data'
-    unzipped_dirpath = database_dirpath / 'UnzippedData/PixelNeRF/dtu_dataset/rs_dtu_4/DTU'
-    extracted_dirpath = database_dirpath / 'DatabaseData'
+    database_dirpath = root_dirpath / 'data/databases/DTU/data'
+    unzipped_dirpath = database_dirpath / 'unzipped_data/PixelNeRF/dtu_dataset/rs_dtu_4/DTU'
+    extracted_dirpath = database_dirpath / 'database_data'
 
     data_extractor = DataExtractor(unzipped_dirpath, extracted_dirpath, features)
     data_extractor.extract_data()

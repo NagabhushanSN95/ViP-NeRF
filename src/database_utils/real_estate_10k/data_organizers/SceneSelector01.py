@@ -184,8 +184,8 @@ def demo1():
     }
 
     root_dirpath = Path('../../../../')
-    extracted_dirpath = root_dirpath / 'Data/Databases/RealEstate10K/Data/ExtractedData'
-    processed_dirpath = root_dirpath / 'Data/Databases/RealEstate10K/Data/ProcessedData'
+    extracted_dirpath = root_dirpath / 'data/databases/RealEstate10K/data/extracted_data'
+    processed_dirpath = root_dirpath / 'data/databases/RealEstate10K/data/processed_data'
     output_dirpath = processed_dirpath / f"{configs['split_name']}{configs['identifier']:02}"
     output_dirpath.mkdir(parents=True, exist_ok=True)
     save_configs(output_dirpath, configs)

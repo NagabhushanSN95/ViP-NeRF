@@ -222,8 +222,8 @@ def demo1():
     features = [DataFeatures.FRAME, DataFeatures.EXTRINSIC, DataFeatures.INTRINSIC]
 
     root_dirpath = Path(f"../")
-    extracted_dirpath = root_dirpath / 'Data/ExtractedData'
-    processed_dirpath = root_dirpath / 'Data/ProcessedData'
+    extracted_dirpath = root_dirpath / 'data/extracted_data'
+    processed_dirpath = root_dirpath / 'data/processed_data'
     tmp_dirpath = root_dirpath / 'tmp'
     output_dirpath = processed_dirpath / f"{configs['split_name']}{configs['identifier']:02}"
     configs = save_configs(output_dirpath, configs)

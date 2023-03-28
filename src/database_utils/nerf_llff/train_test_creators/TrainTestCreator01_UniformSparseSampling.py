@@ -39,15 +39,15 @@ def create_data_frame(frames_data: list):
 
 def create_train_test_set(configs: dict):
     root_dirpath = Path('../../../../')
-    database_dirpath = root_dirpath / 'Data/Databases/NeRF_LLFF/Data/'
+    database_dirpath = root_dirpath / 'data/databases/NeRF_LLFF/data/'
 
     set_num = configs['set_num']
     num_train_frames = configs['num_train_frames']
 
-    set_dirpath = database_dirpath / f'TrainTestSets/Set{set_num:02}'
+    set_dirpath = database_dirpath / f'train_test_sets/set{set_num:02}'
     set_dirpath.mkdir(parents=True, exist_ok=True)
 
-    scenes_dirpath = database_dirpath / 'all/DatabaseData/'
+    scenes_dirpath = database_dirpath / 'all/database_data/'
     scene_names = sorted(map(lambda path: path.stem, scenes_dirpath.iterdir()))
     train_data, val_data, test_data = [], [], []
 

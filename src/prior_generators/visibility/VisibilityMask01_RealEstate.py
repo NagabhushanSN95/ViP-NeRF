@@ -228,17 +228,17 @@ def save_configs(output_dirpath: Path, configs: dict):
 
 def start_generation(gen_configs: dict):
     root_dirpath = Path('../../../')
-    database_dirpath = root_dirpath / 'Data/Databases' / gen_configs['database_dirpath']
+    database_dirpath = root_dirpath / 'data/databases' / gen_configs['database_dirpath']
 
     min_depth = 1
     max_depth = 100
 
-    output_dirpath = database_dirpath / f"test/VisibilityMasks/VW{gen_configs['gen_num']:02}"
+    output_dirpath = database_dirpath / f"test/visibility_masks/VW{gen_configs['gen_num']:02}"
     output_dirpath.mkdir(parents=True, exist_ok=True)
     save_configs(output_dirpath, gen_configs)
 
     set_num = gen_configs['gen_set_num']
-    video_datapath = database_dirpath / f'TrainTestSets/Set{set_num:02}/TrainVideosData.csv'
+    video_datapath = database_dirpath / f'train_test_sets/set{set_num:02}/TrainVideosData.csv'
     video_data = pandas.read_csv(video_datapath)
     scene_nums = numpy.unique(video_data['scene_num'].to_numpy())
 
@@ -250,18 +250,18 @@ def start_generation(gen_configs: dict):
                 if frame2_num <= frame1_num:
                     continue
 
-                mask1_output_path = output_dirpath / f'{scene_num:05}/VisibilityMasks/{frame1_num:04}_{frame2_num:04}.npy'
-                mask2_output_path = output_dirpath / f'{scene_num:05}/VisibilityMasks/{frame2_num:04}_{frame1_num:04}.npy'
-                weights1_output_path = output_dirpath / f'{scene_num:05}/VisibilityWeights/{frame1_num:04}_{frame2_num:04}.npy'
-                weights2_output_path = output_dirpath / f'{scene_num:05}/VisibilityWeights/{frame2_num:04}_{frame1_num:04}.npy'
+                mask1_output_path = output_dirpath / f'{scene_num:05}/visibility_masks/{frame1_num:04}_{frame2_num:04}.npy'
+                mask2_output_path = output_dirpath / f'{scene_num:05}/visibility_masks/{frame2_num:04}_{frame1_num:04}.npy'
+                weights1_output_path = output_dirpath / f'{scene_num:05}/visibility_weights/{frame1_num:04}_{frame2_num:04}.npy'
+                weights2_output_path = output_dirpath / f'{scene_num:05}/visibility_weights/{frame2_num:04}_{frame1_num:04}.npy'
                 if mask1_output_path.exists() and mask2_output_path.exists() and \
                         weights1_output_path.exists() and weights2_output_path.exists():
                     continue
 
-                frame1_path = database_dirpath / f'test/DatabaseData/{scene_num:05}/rgb/{frame1_num:04}.png'
-                frame2_path = database_dirpath / f'test/DatabaseData/{scene_num:05}/rgb/{frame2_num:04}.png'
-                extrinsics_path = database_dirpath / f'test/DatabaseData/{scene_num:05}/CameraExtrinsics.csv'
-                intrinsics_path = database_dirpath / f'test/DatabaseData/{scene_num:05}/CameraIntrinsics.csv'
+                frame1_path = database_dirpath / f'test/database_data/{scene_num:05}/rgb/{frame1_num:04}.png'
+                frame2_path = database_dirpath / f'test/database_data/{scene_num:05}/rgb/{frame2_num:04}.png'
+                extrinsics_path = database_dirpath / f'test/database_data/{scene_num:05}/CameraExtrinsics.csv'
+                intrinsics_path = database_dirpath / f'test/database_data/{scene_num:05}/CameraIntrinsics.csv'
 
                 weights_computer = VisibilityWeightsComputer(gen_configs)
 
@@ -289,7 +289,7 @@ def demo1():
         'gen_num': 2,
         'gen_set_num': 2,
         'database_name': 'RealEstate10K',
-        'database_dirpath': 'RealEstate10K/Data',
+        'database_dirpath': 'RealEstate10K/data',
         'num_depth_planes': 64,
         'temperature': 10,
     }
@@ -300,7 +300,7 @@ def demo1():
         'gen_num': 3,
         'gen_set_num': 3,
         'database_name': 'RealEstate10K',
-        'database_dirpath': 'RealEstate10K/Data',
+        'database_dirpath': 'RealEstate10K/data',
         'num_depth_planes': 64,
         'temperature': 10,
     }
@@ -311,7 +311,7 @@ def demo1():
         'gen_num': 4,
         'gen_set_num': 4,
         'database_name': 'RealEstate10K',
-        'database_dirpath': 'RealEstate10K/Data',
+        'database_dirpath': 'RealEstate10K/data',
         'num_depth_planes': 64,
         'temperature': 10,
     }

@@ -74,9 +74,9 @@ def demo1():
     features = [DataFeatures.OBJECT_MASKS]
 
     root_dirpath = Path('../../../../')
-    database_dirpath = root_dirpath / 'Data/Databases/DTU/Data'
-    unzipped_dirpath = database_dirpath / 'UnzippedData/RegNeRF/idrmasks'
-    extracted_dirpath = database_dirpath / 'DatabaseData'
+    database_dirpath = root_dirpath / 'data/databases/DTU/data'
+    unzipped_dirpath = database_dirpath / 'unzipped_data/RegNeRF/idrmasks'
+    extracted_dirpath = database_dirpath / 'database_data'
 
     data_extractor = DataExtractor(unzipped_dirpath, extracted_dirpath, features)
     data_extractor.extract_data(downsampling_factor=4)

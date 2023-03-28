@@ -29,7 +29,7 @@ def create_data_frame(frames_data: list):
 
 def create_train_test_set(configs: dict):
     root_dirpath = Path('../../../../')
-    database_dirpath = root_dirpath / 'Data/Databases/DTU/Data/'
+    database_dirpath = root_dirpath / 'data/databases/DTU/data/'
 
     # Pixel-NeRF test set configs
     test_scene_nums = [8, 21, 30, 31, 34, 38, 40, 41, 45, 55, 63, 82, 103, 110, 114]
@@ -39,7 +39,7 @@ def create_train_test_set(configs: dict):
 
     set_num = configs['set_num']
 
-    set_dirpath = database_dirpath / f'TrainTestSets/Set{set_num:02}'
+    set_dirpath = database_dirpath / f'train_test_sets/set{set_num:02}'
     set_dirpath.mkdir(parents=True, exist_ok=True)
 
     train_data, val_data, test_data = [], [], []

@@ -44,15 +44,15 @@ def save_configs(output_dirpath: Path, configs: dict):
 
 def start_generation(gen_configs: dict):
     root_dirpath = Path('../../../')
-    database_dirpath = root_dirpath / 'Data/Databases' / gen_configs['database_dirpath']
+    database_dirpath = root_dirpath / 'data/databases' / gen_configs['database_dirpath']
     tmp_dirpath = root_dirpath / 'tmp'
 
-    output_dirpath = database_dirpath / f"all/EstimatedDepths/DE{gen_configs['gen_num']:02}"
+    output_dirpath = database_dirpath / f"all/estimated_depths/DE{gen_configs['gen_num']:02}"
     output_dirpath.mkdir(parents=True, exist_ok=True)
     save_configs(output_dirpath, gen_configs)
 
     set_num = gen_configs['gen_set_num']
-    video_datapath = database_dirpath / f'TrainTestSets/Set{set_num:02}/TrainVideosData.csv'
+    video_datapath = database_dirpath / f'train_test_sets/set{set_num:02}/TrainVideosData.csv'
     video_data = pandas.read_csv(video_datapath)
     scene_nums = numpy.unique(video_data['scene_num'].to_numpy())
 
@@ -64,10 +64,10 @@ def start_generation(gen_configs: dict):
             continue
 
         frame_nums = video_data.loc[video_data['scene_num'] == scene_num]['pred_frame_num'].to_numpy()
-        frames = [read_image(database_dirpath / f'all/DatabaseData/{scene_num:05}/rgb/{frame_num:04}.png') for frame_num in frame_nums]
+        frames = [read_image(database_dirpath / f'all/database_data/{scene_num:05}/rgb/{frame_num:04}.png') for frame_num in frame_nums]
         frames = numpy.stack(frames)
-        intrinsics_path = database_dirpath / f'all/DatabaseData/{scene_num:05}/CameraIntrinsics.csv'
-        extrinsics_path = database_dirpath / f'all/DatabaseData/{scene_num:05}/CameraExtrinsics.csv'
+        intrinsics_path = database_dirpath / f'all/database_data/{scene_num:05}/CameraIntrinsics.csv'
+        extrinsics_path = database_dirpath / f'all/database_data/{scene_num:05}/CameraExtrinsics.csv'
         intrinsics = numpy.loadtxt(intrinsics_path.as_posix(), delimiter=',').reshape((-1, 3, 3))[frame_nums]
         extrinsics = numpy.loadtxt(extrinsics_path.as_posix(), delimiter=',').reshape((-1, 4, 4))[frame_nums]
         intrinsics = numpy.round(intrinsics, 2)
@@ -77,7 +77,7 @@ def start_generation(gen_configs: dict):
             continue
 
         for i, frame_num in enumerate(frame_nums):
-            depth_path = output_dirpath / f'{scene_num:05}/EstimatedDepths/{frame_num:04}.csv'
+            depth_path = output_dirpath / f'{scene_num:05}/estimated_depths/{frame_num:04}.csv'
             depth_path.parent.mkdir(parents=True, exist_ok=True)
             depth_data_list[i].to_csv(depth_path, index=False)
         bounds_data.to_csv(bounds_path, index=False)
@@ -94,7 +94,7 @@ def demo1():
         'gen_num': 2,
         'gen_set_num': 2,
         'database_name': 'DTU',
-        'database_dirpath': 'DTU/Data',
+        'database_dirpath': 'DTU/data',
     }
     start_generation(gen_configs)
 
@@ -103,7 +103,7 @@ def demo1():
         'gen_num': 3,
         'gen_set_num': 3,
         'database_name': 'DTU',
-        'database_dirpath': 'DTU/Data',
+        'database_dirpath': 'DTU/data',
     }
     start_generation(gen_configs)
 
@@ -112,7 +112,7 @@ def demo1():
         'gen_num': 4,
         'gen_set_num': 4,
         'database_name': 'DTU',
-        'database_dirpath': 'DTU/Data',
+        'database_dirpath': 'DTU/data',
     }
     start_generation(gen_configs)
     return

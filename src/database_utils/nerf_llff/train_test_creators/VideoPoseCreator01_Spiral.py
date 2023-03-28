@@ -183,26 +183,26 @@ def save_configs(output_dirpath: Path, configs: dict):
 
 def save_video_poses(configs: dict):
     root_dirpath = Path('../../../../')
-    database_dirpath = root_dirpath / 'Data/Databases/NeRF_LLFF/Data/'
+    database_dirpath = root_dirpath / 'data/databases/NeRF_LLFF/data/'
 
     set_num = configs['set_num']
     num_frames = configs['num_frames']
     num_rotations = configs['num_rotations']
     bd_factor = configs['bd_factor']
 
-    output_dirpath = database_dirpath / f'TrainTestSets/Set{set_num:02}/VideoPoses{this_filenum:02}'
+    output_dirpath = database_dirpath / f'train_test_sets/set{set_num:02}/video_poses{this_filenum:02}'
     output_dirpath.mkdir(parents=True, exist_ok=False)
     save_configs(output_dirpath, configs)
 
-    train_videos_path = database_dirpath / f'TrainTestSets/Set{set_num:02}/TrainVideosData.csv'
+    train_videos_path = database_dirpath / f'train_test_sets/set{set_num:02}/TrainVideosData.csv'
     train_videos_data = pandas.read_csv(train_videos_path)
 
     scene_names = numpy.unique(train_videos_data['scene_name'])
     for scene_name in scene_names:
-        trans_mats_path = database_dirpath / f'all/DatabaseData/{scene_name}/CameraExtrinsics.csv'
+        trans_mats_path = database_dirpath / f'all/database_data/{scene_name}/CameraExtrinsics.csv'
         trans_mats = numpy.loadtxt(trans_mats_path.as_posix(), delimiter=',').reshape((-1, 4, 4))
 
-        bds_path = database_dirpath / f'all/DatabaseData/{scene_name}/DepthBounds.csv'
+        bds_path = database_dirpath / f'all/database_data/{scene_name}/DepthBounds.csv'
         bds = numpy.loadtxt(bds_path.as_posix(), delimiter=',')
 
         video_poses = create_video_poses(trans_mats, num_frames, num_rotations, bds, bd_factor)

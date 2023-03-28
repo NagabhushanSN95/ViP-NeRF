@@ -46,20 +46,20 @@ def save_configs(output_dirpath: Path, configs: dict):
 
 def save_video_poses(configs: dict):
     root_dirpath = Path('../../../../')
-    database_dirpath = root_dirpath / 'Data/Databases/RealEstate10K/Data/'
+    database_dirpath = root_dirpath / 'data/databases/RealEstate10K/data/'
 
     set_num = configs['set_num']
 
-    output_dirpath = database_dirpath / f'TrainTestSets/Set{set_num:02}/VideoPoses{this_filenum:02}'
+    output_dirpath = database_dirpath / f'train_test_sets/set{set_num:02}/video_poses{this_filenum:02}'
     output_dirpath.mkdir(parents=True, exist_ok=False)
     save_configs(output_dirpath, configs)
 
-    train_videos_path = database_dirpath / f'TrainTestSets/Set{set_num:02}/TrainVideosData.csv'
+    train_videos_path = database_dirpath / f'train_test_sets/set{set_num:02}/TrainVideosData.csv'
     train_videos_data = pandas.read_csv(train_videos_path)
 
     scene_nums = numpy.unique(train_videos_data['scene_num'])
     for scene_num in scene_nums:
-        trans_mats_path = root_dirpath / f'Data/test/DatabaseData/{scene_num:05}/CameraExtrinsics.csv'
+        trans_mats_path = root_dirpath / f'data/test/database_data/{scene_num:05}/CameraExtrinsics.csv'
         trans_mats = numpy.loadtxt(trans_mats_path.as_posix(), delimiter=',').reshape((-1, 4, 4))
         video_poses = create_video_poses(trans_mats)
         video_poses_flat = numpy.reshape(video_poses, (video_poses.shape[0], -1))

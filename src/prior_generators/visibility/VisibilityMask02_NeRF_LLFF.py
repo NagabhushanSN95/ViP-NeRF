@@ -228,14 +228,14 @@ def save_configs(output_dirpath: Path, configs: dict):
 
 def start_generation(gen_configs: dict):
     root_dirpath = Path('../../../')
-    database_dirpath = root_dirpath / 'Data/Databases' / gen_configs['database_dirpath']
+    database_dirpath = root_dirpath / 'data/databases' / gen_configs['database_dirpath']
 
-    output_dirpath = database_dirpath / f"all/VisibilityMasks/VW{gen_configs['gen_num']:02}"
+    output_dirpath = database_dirpath / f"all/visibility_masks/VW{gen_configs['gen_num']:02}"
     output_dirpath.mkdir(parents=True, exist_ok=True)
     save_configs(output_dirpath, gen_configs)
 
     set_num = gen_configs['gen_set_num']
-    video_datapath = database_dirpath / f'TrainTestSets/Set{set_num:02}/TrainVideosData.csv'
+    video_datapath = database_dirpath / f'train_test_sets/set{set_num:02}/TrainVideosData.csv'
     video_data = pandas.read_csv(video_datapath)
     scene_names = numpy.unique(video_data['scene_name'].to_numpy())
     suffix = gen_configs['resolution_suffix']
@@ -248,19 +248,19 @@ def start_generation(gen_configs: dict):
                 if frame2_num <= frame1_num:
                     continue
 
-                mask1_output_path = output_dirpath / f'{scene_name}/VisibilityMasks/{frame1_num:04}_{frame2_num:04}.npy'
-                mask2_output_path = output_dirpath / f'{scene_name}/VisibilityMasks/{frame2_num:04}_{frame1_num:04}.npy'
-                weights1_output_path = output_dirpath / f'{scene_name}/VisibilityWeights/{frame1_num:04}_{frame2_num:04}.npy'
-                weights2_output_path = output_dirpath / f'{scene_name}/VisibilityWeights/{frame2_num:04}_{frame1_num:04}.npy'
+                mask1_output_path = output_dirpath / f'{scene_name}/visibility_masks/{frame1_num:04}_{frame2_num:04}.npy'
+                mask2_output_path = output_dirpath / f'{scene_name}/visibility_masks/{frame2_num:04}_{frame1_num:04}.npy'
+                weights1_output_path = output_dirpath / f'{scene_name}/visibility_weights/{frame1_num:04}_{frame2_num:04}.npy'
+                weights2_output_path = output_dirpath / f'{scene_name}/visibility_weights/{frame2_num:04}_{frame1_num:04}.npy'
                 if mask1_output_path.exists() and mask2_output_path.exists() and \
                         weights1_output_path.exists() and weights2_output_path.exists():
                     continue
 
-                frame1_path = database_dirpath / f'all/DatabaseData/{scene_name}/rgb{suffix}/{frame1_num:04}.png'
-                frame2_path = database_dirpath / f'all/DatabaseData/{scene_name}/rgb{suffix}/{frame2_num:04}.png'
-                bounds_path = database_dirpath / f'all/DatabaseData/{scene_name}/DepthBounds.csv'
-                extrinsics_path = database_dirpath / f'all/DatabaseData/{scene_name}/CameraExtrinsics.csv'
-                intrinsics_path = database_dirpath / f'all/DatabaseData/{scene_name}/CameraIntrinsics{suffix}.csv'
+                frame1_path = database_dirpath / f'all/database_data/{scene_name}/rgb{suffix}/{frame1_num:04}.png'
+                frame2_path = database_dirpath / f'all/database_data/{scene_name}/rgb{suffix}/{frame2_num:04}.png'
+                bounds_path = database_dirpath / f'all/database_data/{scene_name}/DepthBounds.csv'
+                extrinsics_path = database_dirpath / f'all/database_data/{scene_name}/CameraExtrinsics.csv'
+                intrinsics_path = database_dirpath / f'all/database_data/{scene_name}/CameraIntrinsics{suffix}.csv'
 
                 weights_computer = VisibilityWeightsComputer(gen_configs)
 
@@ -291,7 +291,7 @@ def demo1():
         'gen_num': 2,
         'gen_set_num': 2,
         'database_name': 'NeRF_LLFF',
-        'database_dirpath': 'NeRF_LLFF/Data',
+        'database_dirpath': 'NeRF_LLFF/data',
         'num_depth_planes': 64,
         'temperature': 10,
         'resolution_suffix': '_down4',
@@ -303,7 +303,7 @@ def demo1():
         'gen_num': 3,
         'gen_set_num': 3,
         'database_name': 'NeRF_LLFF',
-        'database_dirpath': 'NeRF_LLFF/Data',
+        'database_dirpath': 'NeRF_LLFF/data',
         'num_depth_planes': 64,
         'temperature': 10,
         'resolution_suffix': '_down4',
@@ -315,7 +315,7 @@ def demo1():
         'gen_num': 4,
         'gen_set_num': 4,
         'database_name': 'NeRF_LLFF',
-        'database_dirpath': 'NeRF_LLFF/Data',
+        'database_dirpath': 'NeRF_LLFF/data',
         'num_depth_planes': 64,
         'temperature': 10,
         'resolution_suffix': '_down4',

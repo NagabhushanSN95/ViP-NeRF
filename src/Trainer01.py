@@ -52,7 +52,7 @@ class Trainer:
         self.lr_decayer = lr_decayer
         self.device = CommonUtils.get_device(device)
         self.output_dirpath = output_dirpath
-        self.logger = SummaryWriter((output_dirpath / 'Logs').as_posix())
+        self.logger = SummaryWriter((output_dirpath / 'logs').as_posix())
         self.verbose_log = verbose_log
 
         self.model.to(self.device)
@@ -225,11 +225,11 @@ class Trainer:
 
             # Save all predictions
             for mode in ['coarse', 'fine']:
-                frame_output_path = save_dirpath / f'PredictedFrames/{frame_num:04}_{mode}_Iter{iter_num + 1:05}.png'
-                depth_output_path = save_dirpath / f'PredictedDepths/{frame_num:04}_{mode}_Iter{iter_num + 1:05}.npy'
-                depth_var_output_path = save_dirpath / f'PredictedDepthsVariance/{frame_num:04}_{mode}_Iter{iter_num + 1:05}.npy'
-                depth_ndc_output_path = save_dirpath / f'PredictedDepths/{frame_num:04}_{mode}_ndc_Iter{iter_num + 1:05}.npy'
-                depth_var_ndc_output_path = save_dirpath / f'PredictedDepthsVariance/{frame_num:04}_{mode}_ndc_Iter{iter_num + 1:05}.npy'
+                frame_output_path = save_dirpath / f'predicted_frames/{frame_num:04}_{mode}_Iter{iter_num + 1:05}.png'
+                depth_output_path = save_dirpath / f'predicted_depths/{frame_num:04}_{mode}_Iter{iter_num + 1:05}.npy'
+                depth_var_output_path = save_dirpath / f'predicted_depths_variance/{frame_num:04}_{mode}_Iter{iter_num + 1:05}.npy'
+                depth_ndc_output_path = save_dirpath / f'predicted_depths/{frame_num:04}_{mode}_ndc_Iter{iter_num + 1:05}.npy'
+                depth_var_ndc_output_path = save_dirpath / f'predicted_depths_variance/{frame_num:04}_{mode}_ndc_Iter{iter_num + 1:05}.npy'
                 self.save_image(frame_output_path, post_process_output_(output_batch[f'rgb_{mode}'], resolution))
                 self.save_numpy_array(depth_output_path, post_process_output_(output_batch[f'depth_{mode}'], resolution), as_png=True)
                 if f'depth_ndc_{mode}' in output_batch:
@@ -239,7 +239,7 @@ class Trainer:
                     self.save_numpy_array(depth_var_ndc_output_path, post_process_output_(output_batch[f'depth_var_ndc_{mode}'], resolution), as_png=True)
                 if f'visibility2_{mode}' in output_batch:
                     for j, sec_frame_num in enumerate([x for x in frame_nums if x != frame_num]):
-                        vis2_output_path = save_dirpath / f'PredictedVisibilities/{frame_num:04}_{sec_frame_num:04}_{mode}_Iter{iter_num + 1:05}.npy'
+                        vis2_output_path = save_dirpath / f'predicted_visibilities/{frame_num:04}_{sec_frame_num:04}_{mode}_Iter{iter_num + 1:05}.npy'
                         self.save_numpy_array(vis2_output_path, post_process_output_(output_batch[f'visibility2_{mode}'][:, j], resolution), as_png=True)
 
             # Save all loss maps
@@ -268,9 +268,9 @@ class Trainer:
         train_num = self.configs['train_num']
         scene_id = self.configs['data_loader']['scene_id']
         print(f'Training {train_num}/{scene_id} begins...')
-        logs_dirpath = self.output_dirpath / 'Logs'
-        sample_images_dirpath = self.output_dirpath / 'Samples'
-        saved_models_dirpath = self.output_dirpath / 'SavedModels'
+        logs_dirpath = self.output_dirpath / 'logs'
+        sample_images_dirpath = self.output_dirpath / 'samples'
+        saved_models_dirpath = self.output_dirpath / 'saved_models'
         logs_dirpath.mkdir(exist_ok=True)
         sample_images_dirpath.mkdir(exist_ok=True)
         saved_models_dirpath.mkdir(exist_ok=True)
@@ -327,11 +327,11 @@ class Trainer:
             for frame_num, pose in zip(data_loader.preprocessed_data_dict['frame_nums'],
                                        data_loader.preprocessed_data_dict['nerf_data']['poses']):
                 predictions = render_frame(pose)
-                frame_output_path = save_dirpath / f'PredictedFrames/{frame_num:04}_Iter{iter_num:05}.png'
-                depth_output_path = save_dirpath / f'PredictedDepths/{frame_num:04}_Iter{iter_num:05}.png'
-                depth_var_output_path = save_dirpath / f'PredictedDepthsVariance/{frame_num:04}_Iter{iter_num:05}.png'
-                depth_ndc_output_path = save_dirpath / f'PredictedDepths/{frame_num:04}_ndc_Iter{iter_num:05}.png'
-                depth_var_ndc_output_path = save_dirpath / f'PredictedDepthsVariance/{frame_num:04}_ndc_Iter{iter_num:05}.png'
+                frame_output_path = save_dirpath / f'predicted_frames/{frame_num:04}_Iter{iter_num:05}.png'
+                depth_output_path = save_dirpath / f'predicted_depths/{frame_num:04}_Iter{iter_num:05}.png'
+                depth_var_output_path = save_dirpath / f'predicted_depths_variance/{frame_num:04}_Iter{iter_num:05}.png'
+                depth_ndc_output_path = save_dirpath / f'predicted_depths/{frame_num:04}_ndc_Iter{iter_num:05}.png'
+                depth_var_ndc_output_path = save_dirpath / f'predicted_depths_variance/{frame_num:04}_ndc_Iter{iter_num:05}.png'
                 self.save_image(frame_output_path, predictions['image'])
                 self.save_numpy_array(depth_output_path, predictions['depth'], as_png=True)
                 if 'depth_ndc' in predictions:
@@ -480,8 +480,8 @@ def save_model_configs(output_dirpath: Path, configs: dict, filename: Optional[s
 
 def start_training(configs: dict):
     root_dirpath = Path('../')
-    database_dirpath = root_dirpath / 'Data/' / configs['database_dirpath']
-    output_dirpath = root_dirpath / f'Runs/Training/Train{configs["train_num"]:04}'
+    database_dirpath = root_dirpath / 'data/' / configs['database_dirpath']
+    output_dirpath = root_dirpath / f'runs/training/train{configs["train_num"]:04}'
     
     scene_ids = configs['data_loader']['scene_ids']
     for scene_id in scene_ids:

@@ -32,8 +32,8 @@ def extract_scene_data(unzipped_dirpath: Path, extracted_dirpath: Path, split_na
 
 def demo1():
     root_dirpath = Path('../../../../')
-    unzipped_dirpath = root_dirpath / 'Data/UnzippedData'
-    extracted_dirpath = root_dirpath / 'Data/ExtractedData'
+    unzipped_dirpath = root_dirpath / 'data/unzipped_data'
+    extracted_dirpath = root_dirpath / 'data/extracted_data'
 
     # extract_scene_data(unzipped_dirpath, extracted_dirpath, split_name='train')
     extract_scene_data(unzipped_dirpath, extracted_dirpath, split_name='test')

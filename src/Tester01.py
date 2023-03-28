@@ -27,7 +27,7 @@ class NerfTester:
         self.train_configs = train_configs
         self.test_configs = test_configs
         self.root_dirpath = root_dirpath
-        self.database_dirpath = self.root_dirpath / 'Data/Databases' / self.test_configs['database_dirpath']
+        self.database_dirpath = self.root_dirpath / 'data/databases' / self.test_configs['database_dirpath']
         self.data_preprocessor = None
         self.model = None
         self.model_configs = model_configs
@@ -138,20 +138,12 @@ def save_configs(output_dirpath: Path, configs: dict, filename: Optional[str] = 
 
 def start_testing(test_configs: dict, scenes_data: dict, output_dir_suffix: str = '', save_depth: bool = False,
                   save_depth_var: bool = False, save_visibility: bool = False):
-    device = CommonUtils.get_device(test_configs['device'])
-    if device.type == 'cuda':
-        torch.set_default_tensor_type('torch.cuda.FloatTensor')
-    elif device.type == 'cpu':
-        torch.set_default_tensor_type('torch.FloatTensor')
-    else:
-        raise RuntimeError(f'Unknown device type: {device.type}')
-
     root_dirpath = Path('../')
-    output_dirpath = root_dirpath / f"Runs/Testing/Test{test_configs['test_num']:04}"
+    output_dirpath = root_dirpath / f"runs/testing/test{test_configs['test_num']:04}"
 
     train_num = test_configs['train_num']
     model_name = test_configs['model_name']
-    train_dirpath = root_dirpath / f'Runs/Training/Train{train_num:04}'
+    train_dirpath = root_dirpath / f'runs/training/train{train_num:04}'
     train_configs_path = train_dirpath / 'Configs.json'
     if not train_configs_path.exists():
         print(f'Train Configs does not exist at {train_configs_path.as_posix()}. Skipping.')
@@ -169,7 +161,7 @@ def start_testing(test_configs: dict, scenes_data: dict, output_dir_suffix: str 
             continue
         with open(trained_model_configs_path.as_posix(), 'r') as configs_file:
             trained_model_configs = simplejson.load(configs_file)
-        model_path = train_dirpath / f"{scene_id}/SavedModels/{model_name}"
+        model_path = train_dirpath / f"{scene_id}/saved_models/{model_name}"
         if not model_path.exists():
             print(f'Scene {scene_id}: Model does not exist at {model_path.as_posix()}. Skipping.')
             continue
@@ -187,12 +179,12 @@ def start_testing(test_configs: dict, scenes_data: dict, output_dir_suffix: str 
             train_frame_nums = [frame_num for frame_num in frame_nums if scene_data['frames_data'][frame_num]['is_train_frame']]
         for frame_num in tqdm(frame_nums, desc=f'{scene_id}'):
             frame_data = scene_data['frames_data'][frame_num]
-            frame_output_path = scene_output_dirpath / f'PredictedFrames/{frame_num:04}.png'
-            depth_output_path = scene_output_dirpath / f'PredictedDepths/{frame_num:04}.npy'
-            depth_var_output_path = scene_output_dirpath / f'PredictedDepthsVariance/{frame_num:04}.npy'
-            depth_ndc_output_path = scene_output_dirpath / f'PredictedDepths/{frame_num:04}_ndc.npy'
-            depth_var_ndc_output_path = scene_output_dirpath / f'PredictedDepthsVariance/{frame_num:04}_ndc.npy'
-            # visibility_output_path = scene_output_dirpath / f'PredictedVisibilities/{frame_num:04}.npy'
+            frame_output_path = scene_output_dirpath / f'predicted_frames/{frame_num:04}.png'
+            depth_output_path = scene_output_dirpath / f'predicted_depths/{frame_num:04}.npy'
+            depth_var_output_path = scene_output_dirpath / f'predicted_depths_variance/{frame_num:04}.npy'
+            depth_ndc_output_path = scene_output_dirpath / f'predicted_depths/{frame_num:04}_ndc.npy'
+            depth_var_ndc_output_path = scene_output_dirpath / f'predicted_depths_variance/{frame_num:04}_ndc.npy'
+            # visibility_output_path = scene_output_dirpath / f'predicted_visibilities/{frame_num:04}.npy'
 
             inference_required = not frame_output_path.exists()
             if save_depth:
@@ -228,6 +220,6 @@ def start_testing(test_configs: dict, scenes_data: dict, output_dir_suffix: str 
                 if save_visibility and scene_data['frames_data'][frame_num]['is_train_frame']:
                     if 'visibility2' in predictions:
                         for i in range(len(secondary_frame_nums)):
-                            visibility_output_path = scene_output_dirpath / f'PredictedVisibilities/{frame_num:04}_{secondary_frame_nums[i]:04}.npy'
+                            visibility_output_path = scene_output_dirpath / f'predicted_visibilities/{frame_num:04}_{secondary_frame_nums[i]:04}.npy'
                             tester.save_visibility(visibility_output_path, predictions['visibility2'][i], as_png=True)
     return output_dirpath

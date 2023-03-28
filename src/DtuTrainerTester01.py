@@ -40,10 +40,10 @@ def save_video(path: Path, video: numpy.ndarray):
 
 def start_training(train_configs: dict):
     root_dirpath = Path('../')
-    database_dirpath = root_dirpath / 'Data/Databases' / train_configs['database_dirpath']
+    database_dirpath = root_dirpath / 'data/databases' / train_configs['database_dirpath']
 
     # Setup output dirpath
-    output_dirpath = root_dirpath / f'Runs/Training/Train{train_configs["train_num"]:04}'
+    output_dirpath = root_dirpath / f'runs/training/train{train_configs["train_num"]:04}'
     output_dirpath.mkdir(parents=True, exist_ok=True)
     scene_nums = train_configs['data_loader'].get('scene_nums', None)
     Trainer.save_configs(output_dirpath, train_configs)
@@ -51,7 +51,7 @@ def start_training(train_configs: dict):
 
     if train_configs['data_loader']['scene_nums'] is None:
         set_num = train_configs['data_loader']['train_set_num']
-        video_datapath = database_dirpath / f'TrainTestSets/Set{set_num:02}/TrainVideosData.csv'
+        video_datapath = database_dirpath / f'train_test_sets/set{set_num:02}/TrainVideosData.csv'
         video_data = pandas.read_csv(video_datapath)
         scene_nums = numpy.unique(video_data['scene_num'].to_numpy())
     scene_ids = [f'{scene_num:05}' for scene_num in scene_nums]
@@ -62,15 +62,15 @@ def start_training(train_configs: dict):
 
 def start_testing(test_configs: dict):
     root_dirpath = Path('../')
-    database_dirpath = root_dirpath / 'Data/Databases' / test_configs['database_dirpath']
+    database_dirpath = root_dirpath / 'data/databases' / test_configs['database_dirpath']
 
-    output_dirpath = root_dirpath / f"Runs/Testing/Test{test_configs['test_num']:04}"
+    output_dirpath = root_dirpath / f"runs/testing/test{test_configs['test_num']:04}"
     output_dirpath.mkdir(parents=True, exist_ok=True)
     Tester.save_configs(output_dirpath, test_configs)
 
     set_num = test_configs['test_set_num']
-    train_video_datapath = database_dirpath / f'TrainTestSets/Set{set_num:02}/TrainVideosData.csv'
-    test_video_datapath = database_dirpath / f'TrainTestSets/Set{set_num:02}/TestVideosData.csv'
+    train_video_datapath = database_dirpath / f'train_test_sets/set{set_num:02}/TrainVideosData.csv'
+    test_video_datapath = database_dirpath / f'train_test_sets/set{set_num:02}/TestVideosData.csv'
     train_video_data = pandas.read_csv(train_video_datapath)
     test_video_data = pandas.read_csv(test_video_datapath)
     scene_nums = test_configs.get('scene_nums', test_video_data['scene_num'].to_numpy())
@@ -83,10 +83,10 @@ def start_testing(test_configs: dict):
             'frames_data': {}
         }
 
-        extrinsics_path = database_dirpath / f'all/DatabaseData/{scene_id}/CameraExtrinsics.csv'
+        extrinsics_path = database_dirpath / f'all/database_data/{scene_id}/CameraExtrinsics.csv'
         extrinsics = numpy.loadtxt(extrinsics_path.as_posix(), delimiter=',').reshape((-1, 4, 4))
         # Intrinsics and frames required to compute plane sweep volume for conv visibility prediction
-        intrinsics_path = database_dirpath / f'all/DatabaseData/{scene_id}/CameraIntrinsics.csv'
+        intrinsics_path = database_dirpath / f'all/database_data/{scene_id}/CameraIntrinsics.csv'
         intrinsics = numpy.loadtxt(intrinsics_path.as_posix(), delimiter=',').reshape((-1, 3, 3))
 
         test_frame_nums = test_video_data.loc[test_video_data['scene_num'] == scene_num]['pred_frame_num'].to_list()
@@ -101,34 +101,34 @@ def start_testing(test_configs: dict):
     Tester.start_testing(test_configs, scenes_data, save_depth=True, save_depth_var=True, save_visibility=True)
 
     # Run QA
-    qa_filepath = Path('./QA/00_Common/src/AllMetrics05_DTU.py')
+    qa_filepath = Path('./qa/00_Common/src/AllMetrics05_DTU.py')
     cmd = f'python {qa_filepath.absolute().as_posix()} ' \
           f'--demo_function_name demo2 ' \
           f'--pred_videos_dirpath {output_dirpath.absolute().as_posix()} ' \
           f'--database_dirpath {database_dirpath.absolute().as_posix()} ' \
           f'--frames_datapath {test_video_datapath.absolute().as_posix()} ' \
-          f'--pred_folder_name PredictedFrames'
+          f'--pred_folder_name predicted_frames'
     os.system(cmd)
     return
 
 
 def start_testing_videos(test_configs: dict):
     root_dirpath = Path('../')
-    database_dirpath = root_dirpath / 'Data/Databases' / test_configs['database_dirpath']
+    database_dirpath = root_dirpath / 'data/databases' / test_configs['database_dirpath']
 
-    output_dirpath = root_dirpath / f"Runs/Testing/Test{test_configs['test_num']:04}"
+    output_dirpath = root_dirpath / f"runs/testing/test{test_configs['test_num']:04}"
     output_dirpath.mkdir(parents=True, exist_ok=True)
     Tester.save_configs(output_dirpath, test_configs)
 
     set_num = test_configs['test_set_num']
-    video_datapath = database_dirpath / f'TrainTestSets/Set{set_num:02}/TestVideosData.csv'
+    video_datapath = database_dirpath / f'train_test_sets/set{set_num:02}/TestVideosData.csv'
     video_data = pandas.read_csv(video_datapath)
     scene_nums = test_configs.get('scene_nums', video_data['scene_num'].to_numpy())
     scene_nums = numpy.unique(scene_nums)
 
     videos_data = [1, ]
     for video_num in videos_data:
-        video_frame_nums_path = database_dirpath / f'TrainTestSets/Set{set_num:02}/VideoPoses{video_num:02}/VideoFrameNums.csv'
+        video_frame_nums_path = database_dirpath / f'train_test_sets/set{set_num:02}/video_poses{video_num:02}/VideoFrameNums.csv'
         if video_frame_nums_path.exists():
             video_frame_nums = numpy.loadtxt(video_frame_nums_path.as_posix(), delimiter=',').astype(int)
         else:
@@ -141,7 +141,7 @@ def start_testing_videos(test_configs: dict):
                 'frames_data': {}
             }
 
-            extrinsics_path = database_dirpath / f'TrainTestSets/Set{set_num:02}/VideoPoses{video_num:02}/{scene_id}.csv'
+            extrinsics_path = database_dirpath / f'train_test_sets/set{set_num:02}/video_poses{video_num:02}/{scene_id}.csv'
             if not extrinsics_path.exists():
                 continue
             extrinsics = numpy.loadtxt(extrinsics_path.as_posix(), delimiter=',').reshape((-1, 4, 4))
@@ -156,7 +156,7 @@ def start_testing_videos(test_configs: dict):
             scene_output_dirpath = output_dirpath / f'{scene_id}{output_dir_suffix}'
             if not scene_output_dirpath.exists():
                 continue
-            pred_frames = [read_image(scene_output_dirpath / f'PredictedFrames/{frame_num:04}.png') for frame_num in frame_nums]
+            pred_frames = [read_image(scene_output_dirpath / f'predicted_frames/{frame_num:04}.png') for frame_num in frame_nums]
             video_frames = numpy.stack(pred_frames)
             if video_frame_nums is not None:
                 video_frames = video_frames[video_frame_nums]
@@ -172,21 +172,21 @@ def start_testing_static_videos(test_configs: dict):
     :return:
     """
     root_dirpath = Path('../')
-    database_dirpath = root_dirpath / 'Data/Databases' / test_configs['database_dirpath']
+    database_dirpath = root_dirpath / 'data/databases' / test_configs['database_dirpath']
 
-    output_dirpath = root_dirpath / f"Runs/Testing/Test{test_configs['test_num']:04}"
+    output_dirpath = root_dirpath / f"runs/testing/test{test_configs['test_num']:04}"
     output_dirpath.mkdir(parents=True, exist_ok=True)
     Tester.save_configs(output_dirpath, test_configs)
 
     set_num = test_configs['test_set_num']
-    video_datapath = database_dirpath / f'TrainTestSets/Set{set_num:02}/TestVideosData.csv'
+    video_datapath = database_dirpath / f'train_test_sets/set{set_num:02}/TestVideosData.csv'
     video_data = pandas.read_csv(video_datapath)
     scene_nums = test_configs.get('scene_nums', video_data['scene_num'].to_numpy())
     scene_nums = numpy.unique(scene_nums)
 
     videos_data = [1, ]
     for video_num in videos_data:
-        video_frame_nums_path = database_dirpath / f'TrainTestSets/Set{set_num:02}/VideoPoses{video_num:02}/VideoFrameNums.csv'
+        video_frame_nums_path = database_dirpath / f'train_test_sets/set{set_num:02}/video_poses{video_num:02}/VideoFrameNums.csv'
         if video_frame_nums_path.exists():
             video_frame_nums = numpy.loadtxt(video_frame_nums_path.as_posix(), delimiter=',').astype(int)
         else:
@@ -199,7 +199,7 @@ def start_testing_static_videos(test_configs: dict):
                 'frames_data': {}
             }
 
-            extrinsics_path = database_dirpath / f'TrainTestSets/Set{set_num:02}/VideoPoses{video_num:02}/{scene_id}.csv'
+            extrinsics_path = database_dirpath / f'train_test_sets/set{set_num:02}/video_poses{video_num:02}/{scene_id}.csv'
             if not extrinsics_path.exists():
                 continue
             extrinsics = numpy.loadtxt(extrinsics_path.as_posix(), delimiter=',').reshape((-1, 4, 4))
@@ -215,7 +215,7 @@ def start_testing_static_videos(test_configs: dict):
             scene_output_dirpath = output_dirpath / f'{scene_id}{output_dir_suffix}'
             if not scene_output_dirpath.exists():
                 continue
-            pred_frames = [read_image(scene_output_dirpath / f'PredictedFrames/{frame_num:04}.png') for frame_num in frame_nums]
+            pred_frames = [read_image(scene_output_dirpath / f'predicted_frames/{frame_num:04}.png') for frame_num in frame_nums]
             video_frames = numpy.stack(pred_frames)
             if video_frame_nums is not None:
                 video_frames = video_frames[video_frame_nums]
@@ -234,7 +234,7 @@ def demo1a():
             'trainer': f'{this_filename}/{Trainer.this_filename}',
             'train_num': train_num,
             'database': 'DTU',
-            'database_dirpath': 'Databases/DTU/Data',
+            'database_dirpath': 'databases/DTU/data',
             'data_loader': {
                 'data_loader_name': 'DtuEstateDataLoader01',
                 'data_preprocessor_name': 'DataPreprocessor01',
@@ -333,7 +333,7 @@ def demo1a():
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'DTU',
-            'database_dirpath': 'DTU/Data',
+            'database_dirpath': 'DTU/data',
             'scene_nums': [scene_num],
             'device': [0, 1],
         }
@@ -354,7 +354,7 @@ def demo1b():
             'trainer': f'{this_filename}/{Trainer.this_filename}',
             'train_num': train_num,
             'database': 'DTU',
-            'database_dirpath': 'Databases/DTU/Data',
+            'database_dirpath': 'databases/DTU/data',
             'data_loader': {
                 'data_loader_name': 'DtuEstateDataLoader01',
                 'data_preprocessor_name': 'DataPreprocessor01',
@@ -453,7 +453,7 @@ def demo1b():
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'DTU',
-            'database_dirpath': 'DTU/Data',
+            'database_dirpath': 'DTU/data',
             'scene_nums': [scene_num],
             'device': [0, 1],
         }
@@ -474,7 +474,7 @@ def demo1c():
             'trainer': f'{this_filename}/{Trainer.this_filename}',
             'train_num': train_num,
             'database': 'DTU',
-            'database_dirpath': 'Databases/DTU/Data',
+            'database_dirpath': 'databases/DTU/data',
             'data_loader': {
                 'data_loader_name': 'DtuEstateDataLoader01',
                 'data_preprocessor_name': 'DataPreprocessor01',
@@ -573,7 +573,7 @@ def demo1c():
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'DTU',
-            'database_dirpath': 'DTU/Data',
+            'database_dirpath': 'DTU/data',
             'scene_nums': [scene_num],
             'device': [0, 1],
         }
@@ -594,7 +594,7 @@ def demo1d():
             'trainer': f'{this_filename}/{Trainer.this_filename}',
             'train_num': train_num,
             'database': 'DTU',
-            'database_dirpath': 'Databases/DTU/Data',
+            'database_dirpath': 'databases/DTU/data',
             'data_loader': {
                 'data_loader_name': 'DtuEstateDataLoader01',
                 'data_preprocessor_name': 'DataPreprocessor01',
@@ -684,7 +684,7 @@ def demo1d():
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'DTU',
-            'database_dirpath': 'DTU/Data',
+            'database_dirpath': 'DTU/data',
             'scene_nums': [scene_num],
             'device': [0, 1],
         }
@@ -705,7 +705,7 @@ def demo1e():
             'trainer': f'{this_filename}/{Trainer.this_filename}',
             'train_num': train_num,
             'database': 'DTU',
-            'database_dirpath': 'Databases/DTU/Data',
+            'database_dirpath': 'databases/DTU/data',
             'data_loader': {
                 'data_loader_name': 'DtuEstateDataLoader01',
                 'data_preprocessor_name': 'DataPreprocessor01',
@@ -795,7 +795,7 @@ def demo1e():
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'DTU',
-            'database_dirpath': 'DTU/Data',
+            'database_dirpath': 'DTU/data',
             'scene_nums': [scene_num],
             'device': [0, 1],
         }
@@ -816,7 +816,7 @@ def demo1f():
             'trainer': f'{this_filename}/{Trainer.this_filename}',
             'train_num': train_num,
             'database': 'DTU',
-            'database_dirpath': 'Databases/DTU/Data',
+            'database_dirpath': 'databases/DTU/data',
             'data_loader': {
                 'data_loader_name': 'DtuEstateDataLoader01',
                 'data_preprocessor_name': 'DataPreprocessor01',
@@ -906,7 +906,7 @@ def demo1f():
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'DTU',
-            'database_dirpath': 'DTU/Data',
+            'database_dirpath': 'DTU/data',
             'scene_nums': [scene_num],
             'device': [0, 1],
         }
@@ -934,7 +934,7 @@ def demo3():
     """
     train_num = 41
     scene_num = 8
-    loss_plots_dirpath = Path(f'../Runs/Training/Train{train_num:04}/{scene_num:05}/Logs')
+    loss_plots_dirpath = Path(f'../runs/training/train{train_num:04}/{scene_num:05}/logs')
     Trainer.save_plots(loss_plots_dirpath)
     import sys
     sys.exit(0)
@@ -950,7 +950,7 @@ def demo4():
             'train_num': train_num,
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'DTU',
-            'database_dirpath': 'DTU/Data',
+            'database_dirpath': 'DTU/data',
             'device': [0, 1],
         }
         start_testing(test_configs)

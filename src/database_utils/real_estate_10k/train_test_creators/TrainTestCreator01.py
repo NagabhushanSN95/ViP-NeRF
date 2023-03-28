@@ -30,7 +30,7 @@ def create_frames_data(scene_nums: List[int], frame_nums: List[int]):
 
 def create_train_test_set(configs: dict):
     root_dirpath = Path('../../../../')
-    database_dirpath = root_dirpath / 'Data/Databases/RealEstate10K/Data/'
+    database_dirpath = root_dirpath / 'data/databases/RealEstate10K/data/'
 
     set_num = configs['set_num']
     scene_nums = configs['scene_nums']
@@ -47,7 +47,7 @@ def create_train_test_set(configs: dict):
         raise RuntimeError(f'Unknown train views density: {train_views_density}')
     validation_frame_nums = test_frame_nums[::len(test_frame_nums)//5][1:4]
 
-    set_dirpath = database_dirpath / f'TrainTestSets/Set{set_num:02}'
+    set_dirpath = database_dirpath / f'train_test_sets/set{set_num:02}'
     set_dirpath.mkdir(parents=True, exist_ok=True)
 
     train_data = create_frames_data(scene_nums, train_frame_nums)
