@@ -1,7 +1,7 @@
 # Shree KRISHNAya Namaha
 # Extracts RegNeRF data (object masks) in my convention from the unzipped files
 # Author: Nagabhushan S N
-# Last Modified: 05/10/2022
+# Last Modified: 29/03/2023
 
 import time
 import datetime

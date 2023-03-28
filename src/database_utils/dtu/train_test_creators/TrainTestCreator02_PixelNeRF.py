@@ -1,7 +1,7 @@
 # Shree KRISHNAya Namaha
 # Creates train-test sets based on PixelNeRF test set
 # Author: Nagabhushan S N
-# Last Modified: 26/09/2022
+# Last Modified: 29/03/2023
 
 import time
 import datetime

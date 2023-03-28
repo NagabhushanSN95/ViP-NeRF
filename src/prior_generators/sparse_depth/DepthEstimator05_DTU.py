@@ -1,8 +1,7 @@
 # Shree KRISHNAya Namaha
 # Estimates depth on DTU scenes
-# Modified from DepthEstimator04_NeRF_Synthetic.py
 # Author: Nagabhushan S N
-# Last Modified: 26/09/2022
+# Last Modified: 29/03/2023
 
 import json
 import time

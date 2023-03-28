@@ -1,8 +1,7 @@
 # Shree KRISHNAya Namaha
 # Computes visibility weights for frames. Supports multiple frames.
-# Extended from VisibilityMask08_DTU.py for multiple input frames.
 # Author: Nagabhushan S N
-# Last Modified: 03/01/2023
+# Last Modified: 29/03/2023
 
 import time
 import datetime

@@ -1,7 +1,7 @@
 # Shree KRISHNAya Namaha
 # Extracts pixelNeRF data (downsampled to 300x400) in my convention from the unzipped files
 # Author: Nagabhushan S N
-# Last Modified: 26/09/2022
+# Last Modified: 29/03/2023
 
 import json
 import shutil

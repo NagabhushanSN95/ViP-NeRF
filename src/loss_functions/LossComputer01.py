@@ -1,8 +1,7 @@
 # Shree KRISHNAya Namaha
-# Computes all specified losses
-# Computes all the required losses by calling appropriate functions
+# Computes all specified losses by calling appropriate functions
 # Author: Nagabhushan S N
-# Last Modified: 11/09/2022
+# Last Modified: 29/03/2023
 
 import importlib.util
 import inspect

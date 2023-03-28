@@ -1,8 +1,7 @@
 # Shree KRISHNAya Namaha
-# MSE loss function
 # MSE loss function. Excludes sparse depth pixels.
 # Author: Nagabhushan S N
-# Last Modified: 04/12/2022
+# Last Modified: 29/03/2023
 
 from pathlib import Path
 

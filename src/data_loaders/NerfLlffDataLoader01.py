@@ -1,7 +1,7 @@
 # Shree KRISHNAYa Namaha
 # Loads NeRF_LLFF Data for NeRF, Colmap sparse depth, dense depth, visibility prior for NeRF-LLFF Dataset
 # Author: Nagabhushan S N
-# Last Modified: 28/03/2023
+# Last Modified: 29/03/2023
 
 from pathlib import Path
 from typing import Optional

@@ -1,8 +1,7 @@
 # Shree KRISHNAya Namaha
-# Modified from VSL011/src/snb/ColmapSparseCloudComputer03.py
 # Predicts sparse depth from the given images
 # Author: Nagabhushan S N
-# Last Modified: 09/02/2022
+# Last Modified: 29/03/2023
 
 import os
 import shutil

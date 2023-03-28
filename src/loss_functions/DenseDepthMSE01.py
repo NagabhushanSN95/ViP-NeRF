@@ -1,7 +1,7 @@
 # Shree KRISHNAya Namaha
 # MSE loss function on dense depth
 # Author: Nagabhushan S N
-# Last Modified: 28/03/2023
+# Last Modified: 29/03/2023
 
 from pathlib import Path
 

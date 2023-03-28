@@ -1,8 +1,7 @@
 # Shree KRISHNAya Namaha
 # Estimates depth on RE10K scenes
-# Modified from DEL001/DepthEstimator01_RealEstate.py
 # Author: Nagabhushan S N
-# Last Modified: 17/04/2022
+# Last Modified: 29/03/2023
 
 import json
 import time
