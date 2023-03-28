@@ -12,7 +12,6 @@ import simplejson
 import skimage.io
 import torch
 from deepdiff import DeepDiff
-from matplotlib import pyplot
 from tqdm import tqdm
 
 from data_preprocessors.DataPreprocessorFactory import get_data_preprocessor

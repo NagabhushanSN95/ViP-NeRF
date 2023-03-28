@@ -3,24 +3,19 @@
 # Author: Nagabhushan S N
 # Last Modified: 29/03/2023
 
+import datetime
 import os
 import shutil
 import sys
 import time
-import datetime
 import traceback
+from pathlib import Path
 from zipfile import ZipFile
-from collections import OrderedDict
 
 import numpy
-import simplejson
-import skimage.io
-import skvideo.io
 import pandas
-
-from pathlib import Path
+import skimage.io
 from tqdm import tqdm
-from matplotlib import pyplot
 
 import prior_generators.sparse_depth.llff.poses.colmap_read_model as read_model
 

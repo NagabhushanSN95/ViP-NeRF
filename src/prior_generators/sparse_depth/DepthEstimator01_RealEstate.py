@@ -3,20 +3,18 @@
 # Author: Nagabhushan S N
 # Last Modified: 29/03/2023
 
+import datetime
 import json
 import time
-import datetime
 import traceback
+from pathlib import Path
 
 import numpy
+import pandas
 import simplejson
 import skimage.io
-import pandas
-
-from pathlib import Path
-from tqdm import tqdm
-from matplotlib import pyplot
 from deepdiff import DeepDiff
+from tqdm import tqdm
 
 import Tester01 as Tester
 

@@ -10,11 +10,11 @@ import time
 import traceback
 from pathlib import Path
 from typing import Callable
-from deepdiff import DeepDiff
 
 import numpy
 import pandas
 import simplejson
+from deepdiff import DeepDiff
 from tqdm import tqdm
 
 this_filepath = Path(__file__)

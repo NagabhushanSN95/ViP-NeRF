@@ -29,13 +29,12 @@
 #
 # Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
-import os
-import sys
-import collections
-import numpy as np
-import struct
 import argparse
+import collections
+import os
+import struct
 
+import numpy as np
 
 CameraModel = collections.namedtuple(
     "CameraModel", ["model_id", "model_name", "num_params"])

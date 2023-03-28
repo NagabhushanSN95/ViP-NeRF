@@ -1,11 +1,10 @@
-import numpy as np
 import os
-import sys
-import imageio
-import skimage.transform
 
-from llff.poses.colmap_wrapper import run_colmap
+import imageio
 import llff.poses.colmap_read_model as read_model
+import numpy as np
+import skimage.transform
+from llff.poses.colmap_wrapper import run_colmap
 
 
 def load_colmap_data(realdir):
@@ -151,8 +150,7 @@ def minify(basedir, factors=[], resolutions=[]):
             needtoload = True
     if not needtoload:
         return
-    
-    from shutil import copy
+
     from subprocess import check_output
     
     imgdir = os.path.join(basedir, 'images')

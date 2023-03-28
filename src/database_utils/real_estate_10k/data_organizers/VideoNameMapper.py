@@ -2,19 +2,14 @@
 # 
 # Author: Nagabhushan S N
 # Last Modified: 29/03/2023
+import datetime
 import shutil
 import time
-import datetime
 import traceback
-import numpy
-import skimage.io
-import skvideo.io
-import pandas
-import simplejson
-
 from pathlib import Path
+
+import pandas
 from tqdm import tqdm
-from matplotlib import pyplot
 
 this_filepath = Path(__file__)
 this_filename = this_filepath.stem

@@ -3,13 +3,12 @@
 # Author: Nagabhushan S N
 # Last Modified: 29/03/2023
 
-from typing import Optional, Union, Tuple, List
+from typing import Optional, Union, List
 
 import numpy
 import skimage.io
 import skimage.transform
 import torch
-from matplotlib import pyplot
 
 from data_preprocessors.DataPreprocessorParent01 import DataPreprocessorParent
 from utils import CommonUtils01 as CommonUtils

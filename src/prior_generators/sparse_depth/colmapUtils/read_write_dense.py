@@ -32,9 +32,10 @@
 # Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
 import argparse
-import numpy as np
 import os
 import struct
+
+import numpy as np
 
 
 def read_array(path):

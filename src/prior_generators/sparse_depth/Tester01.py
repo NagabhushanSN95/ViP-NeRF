@@ -5,24 +5,16 @@
 
 import os
 import shutil
-import time
-import datetime
-import traceback
-import numpy
-import simplejson
-import skimage.io
-import skvideo.io
-import pandas
-
 from pathlib import Path
 
+import numpy
+import pandas
+import skimage.io
 from scipy.spatial.transform import Rotation
-from tqdm import tqdm
-from matplotlib import pyplot
 
 import llff.poses.colmap_read_model as read_model
-from database import COLMAPDatabase, array_to_blob
 from colmapUtils.read_write_model import read_images_binary, read_points3d_binary
+from database import COLMAPDatabase, array_to_blob
 
 this_filepath = Path(__file__)
 this_filename = this_filepath.stem

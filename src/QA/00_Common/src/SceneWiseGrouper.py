@@ -3,12 +3,12 @@
 # Author: Nagabhushan S N
 # Last Modified: 29/03/2023
 
-import time
 import datetime
+import time
 import traceback
-import pandas
-
 from pathlib import Path
+
+import pandas
 
 this_filepath = Path(__file__)
 this_filename = this_filepath.stem

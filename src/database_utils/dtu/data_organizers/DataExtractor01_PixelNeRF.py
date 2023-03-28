@@ -3,24 +3,18 @@
 # Author: Nagabhushan S N
 # Last Modified: 29/03/2023
 
-import json
+import datetime
 import shutil
 import time
-import datetime
 import traceback
 from enum import Enum
+from pathlib import Path
 from typing import List
 
 import cv2
 import numpy
 import skimage.io
-import skvideo.io
-import pandas
-import simplejson
-
-from pathlib import Path
 from tqdm import tqdm
-from matplotlib import pyplot
 
 this_filepath = Path(__file__)
 this_filename = this_filepath.stem

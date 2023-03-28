@@ -4,32 +4,24 @@
 # train_rdtvs_v2 is designed for 10step sampling ( 41 frames extracted from each scenes corres to frame n-2, n, n+1 and n+2)
 # Author: KV
 # Modified: 23/09/2021
-import dataclasses
+
+import datetime
 import os
 import shutil
-import sys
-import glob
-import subprocess
-import datetime
 import time
 import traceback
 from enum import Enum
 from pathlib import Path
 
+import numpy
 import pandas
 import simplejson
 import skimage.io
-import skvideo.io
 from deepdiff import DeepDiff
-from skimage import io
-import numpy
 from skimage.transform import resize
-
-from multiprocessing import Pool
-# from pytube import YouTube
-from time import sleep
-
 from tqdm import tqdm
+
+# from pytube import YouTube
 
 this_filepath = Path(__file__)
 this_filename = this_filepath.stem

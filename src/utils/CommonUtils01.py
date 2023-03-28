@@ -6,8 +6,6 @@
 from pathlib import Path
 from typing import Union
 
-from matplotlib import pyplot
-
 import torch
 
 this_filepath = Path(__file__)

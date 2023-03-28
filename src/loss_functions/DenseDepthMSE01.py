@@ -5,10 +5,7 @@
 
 from pathlib import Path
 
-from matplotlib import pyplot
-
 import torch
-import torch.nn.functional as F
 
 from loss_functions import LossUtils01
 from loss_functions.LossFunctionParent01 import LossFunctionParent
