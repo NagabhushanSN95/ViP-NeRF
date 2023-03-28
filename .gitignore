@@ -1,4 +1,4 @@
-Data/
+data/
 pretrained_models/
 runs/**/training/train*/**/*.png
 runs/**/training/train*/**/*.npy
