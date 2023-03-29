@@ -28,7 +28,7 @@ class VipNeRF(torch.nn.Module):
             self.coarse_model = MLP(self.configs, self.configs['model']['coarse_mlp'])
 
         if self.fine_mlp_needed:
-            self.fine_model = MLP(self.configs, self.configs['model']['coarse_mlp'])
+            self.fine_model = MLP(self.configs, self.configs['model']['fine_mlp'])
         return
 
     def forward(self, input_batch: dict, retraw: bool = False, sec_views_vis: bool = False):
