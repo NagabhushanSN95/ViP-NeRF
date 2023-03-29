@@ -1,8 +1,8 @@
 {
     "Tester": "RealEstateTrainerTester01/Tester01",
-    "test_num": 11,
+    "test_num": 1,
     "test_set_num": 2,
-    "train_num": 11,
+    "train_num": 1,
     "model_name": "Model_Iter050000.tar",
     "database_name": "RealEstate10K",
     "database_dirpath": "RealEstate10K/data",
