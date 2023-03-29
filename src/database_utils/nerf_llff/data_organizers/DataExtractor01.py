@@ -75,6 +75,7 @@ def extract_scene_data(scene_dirpath):
             print(f'{old_filepath.as_posix()} does not exist!')
             sys.exit(1)
         new_filepath.parent.mkdir(parents=True, exist_ok=True)
+        # shutil.copy(old_filepath, new_filepath)
         image = skimage.io.imread(old_filepath.as_posix())
         skimage.io.imsave(new_filepath.as_posix(), image)
 
@@ -84,6 +85,7 @@ def extract_scene_data(scene_dirpath):
             print(f'{old_filepath.as_posix()} does not exist!')
             sys.exit(1)
         new_filepath.parent.mkdir(parents=True, exist_ok=True)
+        # shutil.copy(old_filepath, new_filepath)
         image = skimage.io.imread(old_filepath.as_posix())
         skimage.io.imsave(new_filepath.as_posix(), image)
 
@@ -94,6 +96,7 @@ def extract_scene_data(scene_dirpath):
             print(f'{old_filepath.as_posix()} does not exist!')
             sys.exit(1)
         new_filepath.parent.mkdir(parents=True, exist_ok=True)
+        # shutil.copy(old_filepath, new_filepath)
         image = skimage.io.imread(old_filepath.as_posix())
         skimage.io.imsave(new_filepath.as_posix(), image)
     
