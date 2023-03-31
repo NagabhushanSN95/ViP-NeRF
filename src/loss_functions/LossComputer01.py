@@ -6,6 +6,8 @@
 import importlib.util
 import inspect
 
+import torch
+
 
 class LossComputer:
     def __init__(self, configs: dict):
@@ -29,6 +31,12 @@ class LossComputer:
         return loss_obj
 
     def compute_losses(self, input_dict, output_dict, return_loss_maps: bool = False):
+        if 'common_data' in input_dict.keys():
+            # unpack common data
+            for key in input_dict['common_data'].keys():
+                if isinstance(input_dict['common_data'][key], torch.Tensor):
+                    input_dict['common_data'][key] = input_dict['common_data'][key][0]
+
         loss_values = {}
         total_loss = 0
         iter_num = input_dict['iter_num']

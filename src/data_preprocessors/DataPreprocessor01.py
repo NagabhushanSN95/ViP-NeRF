@@ -501,7 +501,7 @@ class DataPreprocessor(DataPreprocessorParent):
 
         indices_dict = self.select_batch_indices(iter_num, image_num)
         return_dict.update(indices_dict)
-        
+
         nerf_data_dict = self.load_nerf_cached_batch(iter_num, indices_dict)
         return_dict.update(nerf_data_dict)
 
@@ -522,9 +522,11 @@ class DataPreprocessor(DataPreprocessorParent):
             return_dict.update(visibility_prior_data_dict)
 
         # Copy common data num_gpus times so that it will be available to all GPUs
+        num_gpus = len(self.configs['device'])
         for key in return_dict['common_data'].keys():
-            ones_shape = [1] * return_dict['common_data'][key].ndim
-            return_dict['common_data'][key] = return_dict['common_data'][key][None].repeat([2, *ones_shape])
+            if isinstance(return_dict['common_data'][key], torch.Tensor):
+                ones_shape = [1] * return_dict['common_data'][key].ndim
+                return_dict['common_data'][key] = return_dict['common_data'][key][None].repeat([num_gpus, *ones_shape])
         return return_dict
 
     def select_batch_indices(self, iter_num, image_num):

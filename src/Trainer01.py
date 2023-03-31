@@ -62,15 +62,13 @@ class Trainer:
         def update_losses_dict_(iter_losses_dict_: dict, sub_iter_losses_dict_: dict, num_samples_: int):
             if iter_losses_dict_ is None:
                 iter_losses_dict_ = {}
-                for loss_name_ in sub_iter_losses_dict_.keys():
-                    loss_value_ = sub_iter_losses_dict_[loss_name_]
-                    loss_value_ = loss_value_['loss_value'] if isinstance(loss_value_, dict) else loss_value_
-                    iter_losses_dict_[loss_name_] = loss_value_.item() * num_samples_
-            else:
-                for loss_name_ in iter_losses_dict_.keys():
-                    loss_value_ = sub_iter_losses_dict_[loss_name_]
-                    loss_value_ = loss_value_['loss_value'] if isinstance(loss_value_, dict) else loss_value_
-                    iter_losses_dict_[loss_name_] += (loss_value_.item() * num_samples_)
+            for loss_name_ in sub_iter_losses_dict_.keys():
+                loss_value_ = sub_iter_losses_dict_[loss_name_]
+                loss_value_ = loss_value_['loss_value'] if isinstance(loss_value_, dict) else loss_value_
+                loss_value_ = loss_value_.item() if isinstance(loss_value_, torch.Tensor) else loss_value_
+                if loss_name_ not in iter_losses_dict_.keys():
+                    iter_losses_dict_[loss_name_] = 0
+                iter_losses_dict_[loss_name_] += (loss_value_ * num_samples_)
             return iter_losses_dict_
 
         def delete_dict(dict_data_: dict):
@@ -88,6 +86,8 @@ class Trainer:
             for key in input_batch.keys():
                 if isinstance(input_batch[key], torch.Tensor):
                     sub_input_batch[key] = input_batch[key][start_idx: start_idx+sub_batch_size]
+                elif key == 'common_data':
+                    sub_input_batch[key] = input_batch[key].copy()
                 else:
                     sub_input_batch[key] = input_batch[key]
             sub_output_batch = self.model(sub_input_batch)
@@ -136,6 +136,9 @@ class Trainer:
                         (input_batch_[key].shape[0] == num_pixels):
                     for i_ in range(num_batches):
                         input_batches_[i_][key] = input_batch_[key][i_ * chunk_size_: (i_ + 1) * chunk_size_]
+                elif key == 'common_data':
+                    for i_ in range(num_batches):
+                        input_batches_[i_][key] = input_batch_[key].copy()
                 else:
                     for i_ in range(num_batches):
                         input_batches_[i_][key] = input_batch_[key]

@@ -35,7 +35,8 @@ class VipNeRF(torch.nn.Module):
         if 'common_data' in input_batch.keys():
             # unpack common data
             for key in input_batch['common_data'].keys():
-                input_batch['common_data'][key] = input_batch['common_data'][key][0]
+                if isinstance(input_batch['common_data'][key], torch.Tensor):
+                    input_batch['common_data'][key] = input_batch['common_data'][key][0]
         render_output_dict = self.render(input_batch, retraw=retraw or self.training, sec_views_vis=sec_views_vis or self.training)
         return render_output_dict
 
@@ -281,7 +282,7 @@ class VipNeRF(torch.nn.Module):
                 view_dirs2_flat = torch.reshape(view_dirs2, [-1, view_dirs2.shape[-2], view_dirs2.shape[-1]])  # (nr*ns, nf-1, 3)
                 network_input_dict['view_dirs2'] = view_dirs2_flat
 
-        nerf_mlp = nerf_mlp.to(pts_flat.device)
+        # nerf_mlp = nerf_mlp.to(pts_flat.device)
         network_output_dict = self.batchify(nerf_mlp)(network_input_dict)
 
         for k, v in network_output_dict.items():
@@ -490,7 +491,8 @@ class MLP(torch.nn.Module):
             self.views_output_linear = torch.nn.Linear(self.W // 2, views_output_dim)
         return
 
-    def get_positional_encoder(self, degree):
+    @staticmethod
+    def get_positional_encoder(degree):
         pos_enc_kwargs = {
             'include_input': True,
             'input_dims': 3,
