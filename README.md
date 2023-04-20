@@ -1,5 +1,5 @@
 # ViP-NeRF
-Official code release accompanying the paper - "ViP-NeRF: Visibility Prior for Sparse Input Neural Radiance Fields"
+Official code release accompanying the SIGGRAPH 2023 paper - ["ViP-NeRF: Visibility Prior for Sparse Input Neural Radiance Fields"](https://nagabhushansn95.github.io/publications/2023/ViP-NeRF.html)
 
 ## Python Environment
 Environment details are available in `EnvironmentData/ViP_NeRF_GPU.yml`. The environment can be created using conda
@@ -59,8 +59,10 @@ If you use this code for your research, please cite our paper
 @article{somraj2023VipNeRF,
     title = {{ViP-NeRF}: Visibility Prior for Sparse Input Neural Radiance Fields},
     author = {Somraj, Nagabhushan and Soundararajan, Rajiv},
-    booktitle = {SIGGRAPH},
-    year = {2023}
+    booktitle = {ACM Special Interest Group on Computer Graphics and Interactive Techniques (SIGGRAPH)},
+    month = {August},
+    year = {2023},
+    doi = {10.1145/3588432.3591539},
 }
 ```
 If you use outputs/results of ViP-NeRF model in your publication, please specify the version as well. The current version is 1.0.
