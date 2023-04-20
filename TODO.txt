@@ -1,0 +1,3 @@
+- add QA scores files
+- add gen configs
+- clean up RE10K and DTU database_utils
