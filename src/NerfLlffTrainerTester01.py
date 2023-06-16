@@ -152,7 +152,7 @@ def start_testing_videos(test_configs: dict):
                 scenes_data[scene_id]['frames_data'][frame_num] = {
                     'extrinsic': extrinsics[frame_num + 1]
                 }
-            output_dir_suffix = f'_Video{video_num:02}'
+            output_dir_suffix = f'_video{video_num:02}'
             output_dirpath = Tester.start_testing(test_configs, scenes_data, output_dir_suffix)
             scene_output_dirpath = output_dirpath / f'{scene_id}{output_dir_suffix}'
             if not scene_output_dirpath.exists():
@@ -211,7 +211,7 @@ def start_testing_static_videos(test_configs: dict):
                     'extrinsic': extrinsics[0],
                     'extrinsic_viewcam': extrinsics[frame_num + 1],
                 }
-            output_dir_suffix = f'_Video{video_num:02}_StaticCamera'
+            output_dir_suffix = f'_video{video_num:02}_static_camera'
             output_dirpath = Tester.start_testing(test_configs, scenes_data, output_dir_suffix)
             scene_output_dirpath = output_dirpath / f'{scene_id}{output_dir_suffix}'
             if not scene_output_dirpath.exists():
