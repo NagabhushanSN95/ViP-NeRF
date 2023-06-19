@@ -1,0 +1,12 @@
+{
+    "predicted_frames": {
+        "RMSE05": 65.5819,
+        "PSNR05": 12.8633,
+        "SSIM05": 0.5435,
+        "LPIPS05": 0.4596,
+        "MaskedRMSE05": 47.223,
+        "MaskedPSNR05": 16.0203,
+        "MaskedSSIM05": 0.5218,
+        "MaskedLPIPS05": 0.2239
+    }
+}

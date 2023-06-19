@@ -1,0 +1,7 @@
+{
+    "generator": "DepthEstimator05_DTU",
+    "gen_num": 2,
+    "gen_set_num": 2,
+    "database_name": "DTU",
+    "database_dirpath": "DTU/Data"
+}

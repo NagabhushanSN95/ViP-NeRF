@@ -1,0 +1,7 @@
+{
+    "PosesCreator": "VideoPoseCreator01_Spiral",
+    "set_num": 2,
+    "num_frames": 120,
+    "bd_factor": 0.75,
+    "num_rotations": 2
+}

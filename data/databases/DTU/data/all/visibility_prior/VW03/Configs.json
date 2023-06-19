@@ -1,0 +1,9 @@
+{
+    "generator": "VisibilityMask11_DTU",
+    "gen_num": 3,
+    "gen_set_num": 3,
+    "database_name": "DTU",
+    "database_dirpath": "DTU/Data",
+    "num_depth_planes": 128,
+    "temperature": 10
+}

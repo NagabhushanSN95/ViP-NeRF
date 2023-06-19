@@ -234,7 +234,7 @@ def start_generation(gen_configs: dict):
     min_depth = 0.1
     max_depth = 5
 
-    output_dirpath = database_dirpath / f"all/visibility_masks/VW{gen_configs['gen_num']:02}"
+    output_dirpath = database_dirpath / f"all/visibility_prior/VW{gen_configs['gen_num']:02}"
     output_dirpath.mkdir(parents=True, exist_ok=True)
     save_configs(output_dirpath, gen_configs)
 

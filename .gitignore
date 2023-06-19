@@ -6,8 +6,8 @@ data/**/database_data/**/*.npy
 data/**/database_data/**/*.db
 data/**/database_data/**/sparse/
 data/**/estimated_depths/**/*.csv
-data/**/visibility_masks/**/*.png
-data/**/visibility_masks/**/*.npy
+data/**/visibility_prior/**/*.png
+data/**/visibility_prior/**/*.npy
 data/**/*.zip
 pretrained_models/
 runs/**/training/train*/**/*.png

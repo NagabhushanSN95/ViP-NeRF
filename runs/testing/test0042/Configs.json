@@ -1,12 +1,11 @@
 {
     "Tester": "DtuTrainerTester01/Tester01",
-    "test_num": 12,
+    "test_num": 42,
     "test_set_num": 3,
-    "train_num": 12,
+    "train_num": 42,
     "model_name": "Model_Iter050000.tar",
-    "database_name": "Dtu",
-    "database_dirpath": "Dtu/data",
-    "resolution_suffix": "_down4",
+    "database_name": "DTU",
+    "database_dirpath": "DTU/data",
     "scene_nums": [
         8,
         21,
