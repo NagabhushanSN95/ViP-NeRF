@@ -1,0 +1,10 @@
+{
+    "generator": "VisibilityMask02_NeRF_LLFF",
+    "gen_num": 2,
+    "gen_set_num": 2,
+    "database_name": "NeRF_LLFF",
+    "database_dirpath": "NeRF_LLFF/data",
+    "num_depth_planes": 64,
+    "temperature": 10,
+    "resolution_suffix": "_down4"
+}

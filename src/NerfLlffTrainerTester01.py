@@ -964,7 +964,7 @@ def demo4():
             'model_name': 'Model_Iter050000.tar',
             'database_name': 'NeRF_LLFF',
             'database_dirpath': 'NeRF_LLFF/data',
-            'device': 'gpu0',
+            'device': [0, 1],
         }
         start_testing(test_configs)
         start_testing_videos(test_configs)

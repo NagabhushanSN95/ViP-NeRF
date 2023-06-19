@@ -1,0 +1,5 @@
+{
+    "TrainTestCreator": "TrainTestCreator02_PixelNeRF",
+    "set_num": 4,
+    "num_train_frames": 4
+}

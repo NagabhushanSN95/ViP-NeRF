@@ -1,0 +1,5 @@
+{
+    "TrainTestCreator": "TrainTestCreator01_UniformSparseSampling",
+    "set_num": 1,
+    "num_train_frames": -1
+}

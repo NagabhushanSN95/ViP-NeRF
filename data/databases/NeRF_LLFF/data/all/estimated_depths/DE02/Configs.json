@@ -1,0 +1,8 @@
+{
+    "generator": "DepthEstimator02_NeRF_LLFF",
+    "gen_num": 2,
+    "gen_set_num": 2,
+    "database_name": "NeRF_LLFF",
+    "database_dirpath": "NeRF_LLFF/data",
+    "resolution_suffix": "_down4"
+}
