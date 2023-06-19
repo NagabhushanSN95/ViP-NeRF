@@ -2,6 +2,7 @@ data/**/database_data/**/*.png
 data/**/database_data/**/*.jpg
 data/**/database_data/**/*.JPG
 data/**/database_data/**/*.csv
+data/**/database_data/**/*.txt
 data/**/database_data/**/*.npy
 data/**/database_data/**/*.db
 data/**/database_data/**/sparse/
