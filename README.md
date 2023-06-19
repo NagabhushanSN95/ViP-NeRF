@@ -1,5 +1,5 @@
 # ViP-NeRF
-Official code release accompanying the SIGGRAPH 2023 paper - ["ViP-NeRF: Visibility Prior for Sparse Input Neural Radiance Fields"](https://nagabhushansn95.github.io/publications/2023/ViP-NeRF.html). All the published data is available [here](https://indianinstituteofscience-my.sharepoint.com/:f:/g/personal/nagabhushans_iisc_ac_in/ErmKnJtw5mRPpEzxzVbLMV4BH_XEc1jQDhmtqait2NCqDA?e=E16C2a)
+Official code release accompanying the SIGGRAPH 2023 paper - ["ViP-NeRF: Visibility Prior for Sparse Input Neural Radiance Fields"](https://nagabhushansn95.github.io/publications/2023/ViP-NeRF.html). All the published data is available [here](https://indianinstituteofscience-my.sharepoint.com/:f:/g/personal/nagabhushans_iisc_ac_in/ErmKnJtw5mRPpEzxzVbLMV4BH_XEc1jQDhmtqait2NCqDA?e=E16C2a).
 
 ## Python Environment
 Environment details are available in `EnvironmentData/ViP_NeRF_GPU.yml`. The environment can be created using conda
