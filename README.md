@@ -7,6 +7,11 @@ Environment details are available in `EnvironmentData/ViP_NeRF_GPU.yml`. The env
 conda env create -f ViP_NeRF_GPU.yml
 ```
 
+## Add the source directory to PYTHONPATH
+```shell
+export PYTHONPATH=<ABSOLUTE_PATH_TO_VIPNERF_DIR>/src:$PYTHONPATH
+```
+
 ## Set-up Databases
 Please follow the instructions in [database_utils/README.md](src/database_utils/README.md) file to set up various databases. Instructions for custom databases are also included here.
 
