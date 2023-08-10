@@ -35,21 +35,29 @@ python VideoPoseCreator01_Spiral.py
 
 ## DTU
 1. Download the dataset provided by pixelNeRF [here](https://drive.google.com/file/d/1aTSmJa8Oo2qCc2Ce2kT90MHEA6UTSBKj/view?usp=share_link).
-2. Unzip the downloaded file and place the unzipped data in `Data/databases/DTU/data/unzipped_data/PixelNeRF/`
+2. Unzip the downloaded file and place the unzipped data in `data/databases/DTU/data/all/unzipped_data/PixelNeRF/` <br>
+The path of `scan1` should be `data/databases/DTU/data/all/unzipped_data/PixelNeRF/rs_dtu_4/DTU/scan1`
 3. Extract the data:
 ```shell
+cd src/database_utils/dtu/data_organizers/
 python DataExtractor01_PixelNeRF.py
 ```
 4. Download the object masks data provided by RegNeRF [here](https://drive.google.com/file/d/1Yt5T3LJ9DZDiHbtd9PDFNHqJAd7wt-_E/view?usp=sharing).
-5. Place the downloaded files in `Data/databases/DTU/data/unzipped_data/RegNeRF/idrmasks`
+5. Place the downloaded files in `data/databases/DTU/data/all/unzipped_data/RegNeRF` <br>
+The path of `scan8` should be `data/databases/DTU/data/all/unzipped_data/RegNeRF/idrmasks/scan8`
 6. Extract the object masks data:
 ```shell
 python DataExtractor02_RegNeRF.py
 ```
-7. Create the train/test configs: 
+7. Train/test configs are already provided in the github repository. In case you want to create them again: 
 ```shell
 python TrainTestCreator01_PixelNeRF.py
 python TrainTestCreator02_PixelNeRF.py
+```
+To use different train/test sets, modify the above files accordingly and regenerate the train/test configs.
+8. Return to root directory
+```shell
+cd ../../../../
 ```
 
 ## Custom Databases

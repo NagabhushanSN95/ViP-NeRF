@@ -53,7 +53,7 @@ class DataExtractor:
         tgt_path.parent.mkdir(parents=True, exist_ok=True)
         mask = self.read_mask(src_path)
         down_mask = skimage.transform.rescale(mask, scale=1 / downsampling_factor, preserve_range=True,
-                                              anti_aliasing=True)
+                                              anti_aliasing=False)
         self.save_mask(tgt_path, down_mask)
         return
 
@@ -75,8 +75,8 @@ def demo1():
 
     root_dirpath = Path('../../../../')
     database_dirpath = root_dirpath / 'data/databases/DTU/data'
-    unzipped_dirpath = database_dirpath / 'unzipped_data/RegNeRF/idrmasks'
-    extracted_dirpath = database_dirpath / 'database_data'
+    unzipped_dirpath = database_dirpath / 'all/unzipped_data/RegNeRF/idrmasks'
+    extracted_dirpath = database_dirpath / 'all/database_data'
 
     data_extractor = DataExtractor(unzipped_dirpath, extracted_dirpath, features)
     data_extractor.extract_data(downsampling_factor=4)

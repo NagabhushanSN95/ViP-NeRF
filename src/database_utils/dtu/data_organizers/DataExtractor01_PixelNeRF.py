@@ -132,8 +132,8 @@ def demo1():
 
     root_dirpath = Path('../../../../')
     database_dirpath = root_dirpath / 'data/databases/DTU/data'
-    unzipped_dirpath = database_dirpath / 'unzipped_data/PixelNeRF/dtu_dataset/rs_dtu_4/DTU'
-    extracted_dirpath = database_dirpath / 'database_data'
+    unzipped_dirpath = database_dirpath / 'all/unzipped_data/PixelNeRF/rs_dtu_4/DTU'
+    extracted_dirpath = database_dirpath / 'all/database_data'
 
     data_extractor = DataExtractor(unzipped_dirpath, extracted_dirpath, features)
     data_extractor.extract_data()
