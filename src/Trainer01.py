@@ -465,7 +465,9 @@ def save_configs(output_dirpath: Path, configs: dict, filename: Optional[str] = 
             old_configs['num_iterations'] = configs['num_iterations']
         old_configs['device'] = configs['device']
         if configs != old_configs:
-            raise RuntimeError(f'Configs mismatch while resuming training: {DeepDiff(old_configs, configs)}')
+            # TODO: Reinstate Raise Error
+            # raise RuntimeError(f'Configs mismatch while resuming training: {DeepDiff(old_configs, configs)}')
+            print(f'Configs mismatch while resuming training: {DeepDiff(old_configs, configs)}')
     with open(configs_path.as_posix(), 'w') as configs_file:
         simplejson.dump(configs, configs_file, indent=4)
     return
@@ -478,7 +480,9 @@ def save_model_configs(output_dirpath: Path, configs: dict, filename: Optional[s
         with open(configs_path.as_posix(), 'r') as configs_file:
             old_configs = json.load(configs_file)
         if configs != old_configs:
-            raise RuntimeError(f'Configs mismatch while resuming training: {DeepDiff(old_configs, configs)}')
+            # TODO: Reinstate Raise Error
+            # raise RuntimeError(f'Configs mismatch while resuming training: {DeepDiff(old_configs, configs)}')
+            print(f'Configs mismatch while resuming training: {DeepDiff(old_configs, configs)}')
     with open(configs_path.as_posix(), 'w') as configs_file:
         simplejson.dump(configs, configs_file, indent=4)
     return

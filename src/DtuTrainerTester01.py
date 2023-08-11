@@ -236,7 +236,7 @@ def demo1a():
             'database': 'DTU',
             'database_dirpath': 'databases/DTU/data',
             'data_loader': {
-                'data_loader_name': 'DtuEstateDataLoader01',
+                'data_loader_name': 'DtuDataLoader01',
                 'data_preprocessor_name': 'DataPreprocessor01',
                 'train_set_num': 2,
                 'scene_nums': [scene_num],
@@ -356,7 +356,7 @@ def demo1b():
             'database': 'DTU',
             'database_dirpath': 'databases/DTU/data',
             'data_loader': {
-                'data_loader_name': 'DtuEstateDataLoader01',
+                'data_loader_name': 'DtuDataLoader01',
                 'data_preprocessor_name': 'DataPreprocessor01',
                 'train_set_num': 3,
                 'scene_nums': [scene_num],
@@ -476,7 +476,7 @@ def demo1c():
             'database': 'DTU',
             'database_dirpath': 'databases/DTU/data',
             'data_loader': {
-                'data_loader_name': 'DtuEstateDataLoader01',
+                'data_loader_name': 'DtuDataLoader01',
                 'data_preprocessor_name': 'DataPreprocessor01',
                 'train_set_num': 4,
                 'scene_nums': [scene_num],
@@ -596,7 +596,7 @@ def demo1d():
             'database': 'DTU',
             'database_dirpath': 'databases/DTU/data',
             'data_loader': {
-                'data_loader_name': 'DtuEstateDataLoader01',
+                'data_loader_name': 'DtuDataLoader01',
                 'data_preprocessor_name': 'DataPreprocessor01',
                 'train_set_num': 2,
                 'scene_nums': [scene_num],
@@ -707,7 +707,7 @@ def demo1e():
             'database': 'DTU',
             'database_dirpath': 'databases/DTU/data',
             'data_loader': {
-                'data_loader_name': 'DtuEstateDataLoader01',
+                'data_loader_name': 'DtuDataLoader01',
                 'data_preprocessor_name': 'DataPreprocessor01',
                 'train_set_num': 3,
                 'scene_nums': [scene_num],
@@ -818,7 +818,7 @@ def demo1f():
             'database': 'DTU',
             'database_dirpath': 'databases/DTU/data',
             'data_loader': {
-                'data_loader_name': 'DtuEstateDataLoader01',
+                'data_loader_name': 'DtuDataLoader01',
                 'data_preprocessor_name': 'DataPreprocessor01',
                 'train_set_num': 4,
                 'scene_nums': [scene_num],

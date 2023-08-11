@@ -25,9 +25,11 @@ Please follow the instructions in [prior_generators/visibility/README.md](src/pr
 ## Training and Inference
 The files `RealEstateTrainerTester01.py`, `NerfLlffTrainerTester01.py` and `DtuTrainerTester01.py` contain the code for training, testing and quality assessment along with the configs for the respective databases.
 ```shell
+cd src/
 python RealEstateTrainerTester01.py
 python NerfLlffTrainerTester01.py
 python DtuTrainerTester01.py
+cd ../
 ```
 
 ## Inference with Pre-trained Models

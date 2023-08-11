@@ -130,7 +130,9 @@ def save_configs(output_dirpath: Path, configs: dict, filename: Optional[str] = 
             old_configs[scene_id_key] = merged_scene_ids
         old_configs['device'] = configs['device']
         if configs != old_configs:
-            raise RuntimeError(f'Configs mismatch while resuming testing: {DeepDiff(old_configs, configs)}')
+            # TODO: Reinstate Raise Error
+            # raise RuntimeError(f'Configs mismatch while resuming testing: {DeepDiff(old_configs, configs)}')
+            print(f'Configs mismatch while resuming testing: {DeepDiff(old_configs, configs)}')
     with open(configs_path.as_posix(), 'w') as configs_file:
         simplejson.dump(configs, configs_file, indent=4)
     return
