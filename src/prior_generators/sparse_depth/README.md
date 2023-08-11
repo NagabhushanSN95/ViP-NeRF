@@ -7,6 +7,7 @@ cd src/prior_generators/sparse_depth/
 python DepthEstimator01_RealEstate.py
 python DepthEstimator02_NeRF_LLFF.py
 python DepthEstimator05_DTU.py
+cd ../../../
 ```
 
 

@@ -14,6 +14,7 @@ import pandas
 import simplejson
 import skimage.io
 from tqdm import tqdm
+from deepdiff import DeepDiff
 
 this_filepath = Path(__file__)
 this_filename = this_filepath.stem
@@ -221,7 +222,7 @@ def save_configs(output_dirpath: Path, configs: dict):
             if key not in configs.keys():
                 configs[key] = old_configs[key]
         if configs != old_configs:
-            raise RuntimeError('Configs mismatch while resuming testing')
+            raise RuntimeError(f'Configs mismatch while resuming testing: {DeepDiff(old_configs, configs)}')
     with open(configs_path.as_posix(), 'w') as configs_file:
         simplejson.dump(configs, configs_file, indent=4)
     return

@@ -2,7 +2,9 @@
 
 Run the following files to generate sparse depth priors for all the three datasets for all the three input configurations.
 ```shell
+cd src/prior_generators/visibility/
 python VisibilityMask01_RealEstate.py
 python VisibilityMask02_NeRF_LLFF.py
 python VisibilityMask05_DTU.py
+cd ../../../
 ```
