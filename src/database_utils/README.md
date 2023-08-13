@@ -61,6 +61,29 @@ cd ../../../../
 ```
 
 ## Custom Databases
-We use the Open CV convention - `(x, -y, -z)` world-to-camera format to store the camera poses. The camera intrinsics and extrinsics are stored in the `csv` format. Please refer to one of the [data-loaders](../data_loaders/RealEstateDataLoader01.py) for more details. Organize your custom dataset in accordance with the data-loader or write the data-loader file to load the data directly from your custom database format.
+We use the Open CV convention: `(x, -y, -z)` world-to-camera format to store the camera poses. 
+The camera intrinsics and extrinsics are stored in the `csv` format after flattening them, i.e., if a scene contains 50 frames, intrinsics and extrinsics are stores as csv files with 50 rows each and 9 & 16 columns respectively.
+The directory tree in the following shows an example.
+Please refer to one of the [data-loaders](../data_loaders/RealEstateDataLoader01.py) for more details. 
+Organize your custom dataset in accordance with the data-loader or write the data-loader file to load the data directly from your custom database format.
+
+Example directory tree:
+```shell
+<DATABASE_NAME>
+ |--data
+    |--all
+    |  |--database_data
+    |     |--scene0001
+    |     |  |--rgb
+    |     |  |  |--0000.png
+    |     |  |  |--0001.png
+    |     |  |  |-- ...
+    |     |  |  |--0049.png
+    |     |  |--CameraExtrinsics.csv
+    |     |  |--CameraIntrinsics.csv
+    |     |--scene0002
+    |     | ...
+    |--train_test_sets
+```
 
 Our code also requires a config file specify the train/validation/test images. Please look into [train-test-creators](real_estate_10k/train_test_creators/TrainTestCreator01.py) and replicate a similar file for your custom dataset.
