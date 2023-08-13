@@ -155,7 +155,7 @@ def extract_data(database_data_dirpath: Path):
 def main():
     root_dirpath = Path('../../../../')
     database_dirpath = root_dirpath / 'data/databases/NeRF_LLFF/data/'
-    zip_filepath = database_dirpath / f'nerf_llff_data.zip'
+    zip_filepath = database_dirpath / f'all/nerf_llff_data.zip'
     database_data_dirpath = database_dirpath / 'all/database_data'
 
     unzip_data(zip_filepath, database_data_dirpath)

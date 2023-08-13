@@ -15,7 +15,7 @@ python SceneSelector01.py
 python DataExtractor01.py
 ```
 5. Copy the downloaded scenes to `Data/databases/RealEstate10K/data/test/database_data`.
-6. Create the train/test configs: 
+6. Train/test configs are already provided in the github repository. In case you want to create them again: 
 ```shell
 python TrainTestCreator01.py
 python VideoPoseCreator01_Original.py
@@ -25,12 +25,17 @@ python VideoPoseCreator01_Original.py
 1. Download the [`nerf_llff_data.zip`](https://drive.google.com/file/d/16VnMcF1KJYxN9QId6TClMsZRahHNMW5g/view?usp=share_link) file from original release in google drive. Place the downloaded file at `Data/databases/NeRF_LLFF/data/nerf_llff_data.zip`.
 2. Run the data extractor file:
 ```shell
+cd src/database_utils/nerf_llff/data_organizers/
 python DataExtractor01.py
 ```
-3. Create the train/test configs: 
+3. Train/test configs are already provided in the github repository. In case you want to create them again: 
 ```shell
 python TrainTestCreator01_UniformSparseSampling.py
 python VideoPoseCreator01_Spiral.py
+```
+4. Return to root directory
+```shell
+cd ../../../../
 ```
 
 ## DTU
