@@ -1,7 +1,7 @@
 # Extracting Databases
 
 ## RealEstate-10K
-Currently the code to extract RealEstate-10K dataset is not complete. This will be completed soon. In the meantime, please down the dataset following instructions at the [official webpage](https://google.github.io/realestate10k/download.html) and place them as described in [here](#custom-databases)
+Currently the code to extract RealEstate-10K dataset is not complete. This will be completed soon. In the meantime, please down the dataset following instructions at the [official webpage](https://google.github.io/realestate10k/download.html) and follow the instructions for [custom databases](#custom-databases).
 
 [//]: # (1. Download the dataset metadata from [here]&#40;https://google.github.io/realestate10k/download.html&#41;)
 
