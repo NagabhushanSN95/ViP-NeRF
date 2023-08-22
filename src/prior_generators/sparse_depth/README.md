@@ -10,6 +10,9 @@ python DepthEstimator05_DTU.py
 cd ../../../
 ```
 
+Note that Colmap can sometime fail in 3D sparse reconstruction. This is more prevalent on some DTU scenes, for e.g., the one containing a single homogeneous ball.
+Re-running Colmap (above python files) can sometimes fix the issue. Even if the sparse depth prior generation fails, ViP-NeRF can still run on such scenes by utilizing the visibility prior. Simple disable sparse depth prior for such scenes. For example, comment lines 306--309 in [DtuTrainerTester01.py](../../../src/DtuTrainerTester01.py).
+
 
 
 ## Acknowledgements

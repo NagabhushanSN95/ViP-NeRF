@@ -1,25 +1,45 @@
 # Extracting Databases
 
 ## RealEstate-10K
-1. Download the dataset metadata from [here](https://google.github.io/realestate10k/download.html)
-2. Remap the names to integers:
-```shell
-python VideoNameMapper.py
-```
-3. We use the scenes from test set. Select the scenes to download:
-```shell
-python SceneSelector01.py
-```
-4. Download the selected scenes:
-```shell
-python DataExtractor01.py
-```
-5. Copy the downloaded scenes to `Data/databases/RealEstate10K/data/test/database_data`.
-6. Train/test configs are already provided in the github repository. In case you want to create them again: 
-```shell
-python TrainTestCreator01.py
-python VideoPoseCreator01_Original.py
-```
+Currently the code to extract RealEstate-10K dataset is not complete. This will be completed soon. In the meantime, please down the dataset following instructions at the [official webpage](https://google.github.io/realestate10k/download.html) and place them as described in [here](#custom-databases)
+
+[//]: # (1. Download the dataset metadata from [here]&#40;https://google.github.io/realestate10k/download.html&#41;)
+
+[//]: # (2. Remap the names to integers:)
+
+[//]: # (```shell)
+
+[//]: # (python VideoNameMapper.py)
+
+[//]: # (```)
+
+[//]: # (3. We use the scenes from test set. Select the scenes to download:)
+
+[//]: # (```shell)
+
+[//]: # (python SceneSelector01.py)
+
+[//]: # (```)
+
+[//]: # (4. Download the selected scenes:)
+
+[//]: # (```shell)
+
+[//]: # (python DataExtractor01.py)
+
+[//]: # (```)
+
+[//]: # (5. Copy the downloaded scenes to `Data/databases/RealEstate10K/data/test/database_data`.)
+
+[//]: # (6. Train/test configs are already provided in the github repository. In case you want to create them again: )
+
+[//]: # (```shell)
+
+[//]: # (python TrainTestCreator01.py)
+
+[//]: # (python VideoPoseCreator01_Original.py)
+
+[//]: # (```)
 
 ## NeRF-LLFF
 1. Download the [`nerf_llff_data.zip`](https://drive.google.com/file/d/16VnMcF1KJYxN9QId6TClMsZRahHNMW5g/view?usp=share_link) file from original release in google drive. Place the downloaded file at `Data/databases/NeRF_LLFF/data/nerf_llff_data.zip`.
