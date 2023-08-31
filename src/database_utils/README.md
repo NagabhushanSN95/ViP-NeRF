@@ -42,7 +42,7 @@ Currently the code to extract RealEstate-10K dataset is not complete. This will 
 [//]: # (```)
 
 ## NeRF-LLFF
-1. Download the [`nerf_llff_data.zip`](https://drive.google.com/file/d/16VnMcF1KJYxN9QId6TClMsZRahHNMW5g/view?usp=share_link) file from original release in google drive. Place the downloaded file at `Data/databases/NeRF_LLFF/data/nerf_llff_data.zip`.
+1. Download the [`nerf_llff_data.zip`](https://drive.google.com/file/d/16VnMcF1KJYxN9QId6TClMsZRahHNMW5g/view?usp=share_link) file from original release in google drive. Place the downloaded file at `Data/databases/NeRF_LLFF/data/all/nerf_llff_data.zip`.
 2. Run the data extractor file:
 ```shell
 cd src/database_utils/nerf_llff/data_organizers/
