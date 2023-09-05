@@ -1,7 +1,8 @@
 # Extracting Databases
 
 ## RealEstate-10K
-Currently the code to extract RealEstate-10K dataset is not complete. This will be completed soon. In the meantime, please down the dataset following instructions at the [official webpage](https://google.github.io/realestate10k/download.html) and follow the instructions for [custom databases](#custom-databases).
+Currently, the code to extract RealEstate-10K dataset is not complete. This will be completed soon. In the meantime, please down the dataset following instructions at the [official webpage](https://google.github.io/realestate10k/download.html) and follow the instructions for [custom databases](#custom-databases).
+For camera extrinsincs, our [data-loader](../data_loaders/RealEstateDataLoader01.py) uses the same convention (world-to-camera in (x, -y, -z) format) as the original dataset for camera extrinsics. So you only need to copy the camera parameters to appropriate csv files (CameraIntrinsics.csv (9 columns per row) and CameraExtrinsics.csv (16 columns per row)) and the video frames to `rgb` folder.
 
 [//]: # (1. Download the dataset metadata from [here]&#40;https://google.github.io/realestate10k/download.html&#41;)
 
