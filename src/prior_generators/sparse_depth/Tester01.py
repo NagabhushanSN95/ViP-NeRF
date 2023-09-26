@@ -1,7 +1,7 @@
 # Shree KRISHNAya Namaha
 # Predicts sparse depth from the given images
-# Author: Nagabhushan S N
-# Last Modified: 29/03/2023
+# Author: Nagabhushan S N, Sai Harsha Mupparaju
+# Last Modified: 26/09/2023
 
 import os
 import shutil
@@ -37,7 +37,7 @@ class ColmapTester:
         self.tmp_dirpath.mkdir(parents=True)
         return 
     
-    def save_tmp_data(self, images: numpy.ndarray, extrinsics: numpy.ndarray, intrinsics: numpy.ndarray):
+    def save_tmp_data(self, images: numpy.ndarray, intrinsics: numpy.ndarray):
         # TODO: handle differing intrinsics as well
         for intrinsic in intrinsics:
             assert numpy.allclose(intrinsic, intrinsics[0])
@@ -58,17 +58,7 @@ class ColmapTester:
         camera_data = {
             camera_id: intrinsic
         }
-    
-        # Create images.txt file
-        # TODO: Make sure IDs of images are consistent with the database
-        images_data = []
-        for frame_num, trans_mat in enumerate(extrinsics):
-            quaternions, translations = self.get_quaternions_and_translations(trans_mat)
-            images_data.append(f'{frame_num+1} {quaternions} {translations} {camera_id} {frame_num:04}.png\n')
-            images_data.append(f'\n')
-        with open(self.images_path.as_posix(), 'w') as images_file:
-            images_file.writelines(images_data)
-    
+
         # Create points3D.txt file
         os.system(f'touch {self.points_path.as_posix()}')
         return camera_data
@@ -85,7 +75,7 @@ class ColmapTester:
         translations_str = ' '.join(translations.astype('str'))
         return quaternions_str, translations_str
     
-    def run_colmap(self, camera_data):
+    def run_colmap(self, camera_data, extrinsics):
         cmd = f'colmap feature_extractor --database_path {self.db_path.as_posix()} --image_path {self.images_dirpath.as_posix()} --ImageReader.single_camera 1'
         print(cmd)
         os.system(cmd)
@@ -99,12 +89,25 @@ class ColmapTester:
         params = array_to_blob(params)
         # db.execute("UPDATE cameras SET params=? WHERE camera_id=?", (params, camera_id))
         db.execute("UPDATE cameras SET model=6, params=? WHERE camera_id=?", (params, camera_id))
+
+        # Create images.txt file
+        db_cursor = db.cursor()
+        images_data = []
+        for frame_num, trans_mat in enumerate(extrinsics):
+            quaternions, translations = self.get_quaternions_and_translations(trans_mat)
+            db_cursor.execute(f"SELECT image_id FROM images WHERE name='{frame_num:04}.png'")
+            db_image_data = db_cursor.fetchall()
+            assert len(db_image_data) == 1
+            images_data.append(f'{db_image_data[0][0]} {quaternions} {translations} {camera_id} {frame_num:04}.png\n')
+            images_data.append(f'\n')
+        with open(self.images_path.as_posix(), 'w') as images_file:
+            images_file.writelines(images_data)
         db.close()
-    
+
         cmd = f'colmap exhaustive_matcher --database_path {self.db_path.as_posix()}'
         print(cmd)
         os.system(cmd)
-    
+
         cmd = f'colmap point_triangulator --database_path {self.db_path.as_posix()} --image_path {self.images_dirpath.as_posix()} --input_path {self.sparse_dirpath.as_posix()} --output_path {self.sparse_dirpath.as_posix()} --Mapper.tri_ignore_two_view_tracks 0 --Mapper.num_threads 16 --Mapper.init_min_tri_angle 4 --Mapper.multiple_models 0 --Mapper.extract_colors 0'
         # cmd = f'colmap point_triangulator --database_path {self.db_path.as_posix()} --image_path {self.images_dirpath.as_posix()} --import_path {self.sparse_dirpath.as_posix()} --export_path {self.sparse_dirpath.as_posix()} --Mapper.tri_ignore_two_view_tracks 0 --Mapper.num_threads 16 --Mapper.init_min_tri_angle 4 --Mapper.multiple_models 0 --Mapper.extract_colors 0'
         print(cmd)
@@ -287,7 +290,7 @@ class ColmapTester:
     
     def estimate_sparse_depth(self, images: numpy.ndarray, extrinsics: numpy.ndarray, intrinsics: numpy.ndarray):
         self.clean_tmp_dir()
-        camera_data = self.save_tmp_data(images, extrinsics, intrinsics)
-        self.run_colmap(camera_data)
+        camera_data = self.save_tmp_data(images, intrinsics)
+        self.run_colmap(camera_data, extrinsics)
         depth_data, bounds_data = self.compute_colmap_depth()
         return depth_data, bounds_data
