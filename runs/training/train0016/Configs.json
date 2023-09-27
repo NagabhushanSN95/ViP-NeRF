@@ -93,9 +93,8 @@
     "validation_save_loss_maps": false,
     "model_save_interval": 10000,
     "mixed_precision_training": false,
-    "seed": [47, 47, 24, 24, 47, 47, 24, 47],
+    "seed": 454,
     "device": [
-        0,
-        1
+        0
     ]
 }
