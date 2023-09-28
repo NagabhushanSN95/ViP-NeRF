@@ -93,8 +93,9 @@
     "validation_save_loss_maps": false,
     "model_save_interval": 10000,
     "mixed_precision_training": false,
-    "seed": 563,
+    "seed": [602, 602, 999, 602, 999, 999, 602, 999],
     "device": [
-        0
+        0,
+        1
     ]
 }
