@@ -1,12 +1,12 @@
 {
     "trainer": "RealEstateTrainerTester01/Trainer01",
-    "train_num": 3,
+    "train_num": 2,
     "database": "RealEstate10K",
     "database_dirpath": "databases/RealEstate10K/data",
     "data_loader": {
         "data_loader_name": "RealEstateDataLoader01",
         "data_preprocessor_name": "DataPreprocessor01",
-        "train_set_num": 4,
+        "train_set_num": 3,
         "scene_nums": [
             0,
             1,
@@ -26,10 +26,10 @@
         "visibility_prior": {
             "load_masks": true,
             "load_weights": false,
-            "masks_dirname": "VW04"
+            "masks_dirname": "VW03"
         },
         "sparse_depth": {
-            "dirname": "DE04",
+            "dirname": "DE03",
             "num_rays": 2048
         }
     },
@@ -99,7 +99,6 @@
     "mixed_precision_training": false,
     "seed": 0,
     "device": [
-        0,
-        1
+        0
     ]
 }
