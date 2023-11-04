@@ -99,6 +99,7 @@
     "mixed_precision_training": false,
     "seed": 0,
     "device": [
-        0
+        0,
+        1
     ]
 }
