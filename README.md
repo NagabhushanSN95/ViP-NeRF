@@ -35,7 +35,7 @@ cd ../
 ## Inference with Pre-trained Models
 The train configs are also provided in `runs/training/train****` folders for each of the scenes. Please download the trained models from [here](https://indianinstituteofscience-my.sharepoint.com/:f:/g/personal/nagabhushans_iisc_ac_in/EssGwn7AUh5AjT6wtbcnsp4B7QGHQ7-DAeAiBBdTBkwilg?e=GCZSAQ) and place them in the appropriate folders. 
 
-Disable the train call in the [TrainerTester](src/RealEstateTrainerTester01.py#L340) files and run the respective files. For DTU dataset, we provide the pre-trained models for `train0044`, `train0045`, `train0046`. Hence, disable the corresponding inference calls in [`DtuTrainerTester01.py`](src/DtuTrainerTester01.py#L966-L968).
+Disable the train call in the [TrainerTester](src/RealEstateTrainerTester01.py#L340) files and run the respective files. For DTU dataset, we do not provide the pre-trained models for `train0044`, `train0045`, `train0046`. Hence, disable the corresponding inference calls in [`DtuTrainerTester01.py`](src/DtuTrainerTester01.py#L966-L968).
 
 This will run inference using the pre-trained models and also evaluate the synthesized images and reports the performance. To reproduce results from the paper, use the models trained for 50k iterations. For best results, use the models trained for more iterations.
 
